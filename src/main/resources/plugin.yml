@@ -4,7 +4,7 @@ author: StarTux
 version: 0.1
 main: com.winthier.bans.BansPlugin
 depend: []
-softdepend: [ XServer, Herochat ]
+softdepend: [ Connect, Herochat ]
 database: true
 commands:
   bans:
