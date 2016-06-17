@@ -2,12 +2,7 @@ package com.winthier.bans;
 
 import com.winthier.connect.Connect;
 import com.winthier.connect.bukkit.event.ConnectMessageEvent;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.util.Base64;
+import java.util.Map;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 
@@ -23,29 +18,17 @@ public class ConnectHandler implements Listener {
     }
 
     @EventHandler
-        public void onConnectMessage(ConnectMessageEvent event) {
+    public void onConnectMessage(ConnectMessageEvent event) {
         if (!"Bans".equals(event.getMessage().getChannel())) return;
-        try {
-            byte[] data = Base64.getDecoder().decode((String)event.getMessage().getPayload());
-            ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(data));
-            Object obj = in.readObject();
-            in.close();
-            plugin.playerListener.onRemoteBan((Ban)obj);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        Object o = event.getMessage().getPayload();
+        if (!(o instanceof Map)) return;
+        @SuppressWarnings("unchecked")
+        Map<String, Object> map = (Map<String, Object>)o;
+        Ban ban = Ban.deserialize(map);
+        plugin.playerListener.onRemoteBan(ban);
     }
 
     public void broadcast(Ban ban) {
-        try {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            ObjectOutputStream out = new ObjectOutputStream(baos);
-            out.writeObject(ban);
-            out.close();
-            String string = Base64.getEncoder().encodeToString(baos.toByteArray());
-            Connect.getInstance().broadcast("Bans", string);
-        } catch (IOException ioe) {
-            ioe.printStackTrace();
-        }
+        Connect.getInstance().broadcast("Bans", ban.serialize());
     }
 }
