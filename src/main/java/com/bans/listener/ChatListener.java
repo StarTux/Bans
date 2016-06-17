@@ -31,11 +31,11 @@ public class ChatListener implements Listener {
         if (jail != null) {
             if (jail.hasExpired()) {
                 playerListener.updatePlayerBans(player);
+            } else {
+                event.setCancelled(true);
+                player.sendMessage(Msg.getBanMessage(playerListener.plugin, jail));
+                return;
             }
-        } else {
-            event.setCancelled(true);
-            player.sendMessage(Msg.getBanMessage(playerListener.plugin, jail));
-            return;
         }
     }
 }
