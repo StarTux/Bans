@@ -24,8 +24,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 public class PlayerListener implements Listener {
     public final BansPlugin plugin;
     private final Map<Player, BanInfo> players = Collections.<Player, BanInfo>synchronizedMap(new WeakHashMap<Player, BanInfo>());
-    private HerochatListener herochatListener = null;
-
+    private ChatListener chatListener = null;
     public PlayerListener(BansPlugin plugin) {
         this.plugin = plugin;
     }
@@ -36,9 +35,10 @@ public class PlayerListener implements Listener {
         for (Player player : plugin.getServer().getOnlinePlayers()) {
             updateBanInfo(player);
         }
-        if (plugin.getServer().getPluginManager().getPlugin("Herochat") != null) {
-            herochatListener = new HerochatListener(this);
-            herochatListener.init();
+        if (plugin.getServer().getPluginManager().getPlugin("Chat") != null) {
+            chatListener = new ChatListener(this);
+            plugin.getServer().getPluginManager().registerEvents(chatListener, plugin);
+            plugin.getLogger().info("Chat plugin found!");
         }
     }
 

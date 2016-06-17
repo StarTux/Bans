@@ -34,7 +34,7 @@
     <dependency>
       <groupId>org.spigotmc</groupId>
       <artifactId>spigot-api</artifactId>
-      <version>1.8.7-R0.1-SNAPSHOT</version>
+      <version>1.10-R0.1-SNAPSHOT</version>
     </dependency>
     <!-- Lombok -->
     <dependency>
@@ -64,13 +64,12 @@
       <version>0.1</version>
       <scope>provided</scope>
     </dependency>
-    <!-- Herochat -->
+    <!-- Connect -->
     <dependency>
-      <groupId>org.dthielke</groupId>
-      <artifactId>HeroChat</artifactId>
-      <version>5.6.7</version>
-      <scope>system</scope>
-      <systemPath>${project.basedir}/lib/Herochat.jar</systemPath>
+      <groupId>com.winthier.chat</groupId>
+      <artifactId>chat</artifactId>
+      <version>0.1</version>
+      <scope>provided</scope>
     </dependency>
   </dependencies>
   <build>
