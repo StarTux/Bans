@@ -29,6 +29,7 @@ public class BansPlugin extends JavaPlugin {
         }
         commands.init();
         playerListener.init();
+        connectHandler.init();
     }
 
     @Override
