@@ -404,8 +404,6 @@ public class Commands implements CommandExecutor {
                 plugin.database.getPlayer(player);
                 if (++i % 1000 == 0) sender.sendMessage("Imported " + i + "/" + players.length + " players.");
             }
-        } else if (args.length == 1 && "ImportBans".equalsIgnoreCase(args[0])) {
-            plugin.database.importLegacy(sender);
         } else if (args.length == 1 && "UpdateBans".equalsIgnoreCase(args[0])) {
             plugin.database.updateAllBans();
             sender.sendMessage("Updated all bans. See console.");

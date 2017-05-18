@@ -3,9 +3,8 @@ description: Ban management for Winthier
 author: StarTux
 version: 0.1
 main: com.winthier.bans.BansPlugin
-depend: []
+depend: [ SQL ]
 softdepend: [ Connect, Chat ]
-database: true
 commands:
   bans:
     description: Admin interface.

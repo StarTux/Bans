@@ -19,11 +19,12 @@ import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.scheduler.BukkitRunnable;
 
 public class PlayerListener implements Listener {
     public final BansPlugin plugin;
-    private final Map<Player, BanInfo> players = Collections.<Player, BanInfo>synchronizedMap(new WeakHashMap<Player, BanInfo>());
+    private final Map<UUID, BanInfo> players = Collections.<UUID, BanInfo>synchronizedMap(new WeakHashMap<UUID, BanInfo>());
     private ChatListener chatListener = null;
     public PlayerListener(BansPlugin plugin) {
         this.plugin = plugin;
@@ -90,7 +91,7 @@ public class PlayerListener implements Listener {
     }
 
     public BanInfo getBanInfo(Player player) {
-        return players.get(player);
+        return players.get(player.getUniqueId());
     }
 
     /**
@@ -99,7 +100,7 @@ public class PlayerListener implements Listener {
      */
     public void updateBanInfo(Player player, List<BanTable> bans) {
         BanInfo banInfo = new BanInfo();
-        players.put(player, banInfo);
+        players.put(player.getUniqueId(), banInfo);
         for (BanTable ban : bans) {
             switch (ban.getType()) {
             case MUTE:
@@ -189,9 +190,15 @@ public class PlayerListener implements Listener {
     @EventHandler(priority = EventPriority.LOW)
     public void onPlayerJoin(PlayerJoinEvent event) {
         PlayerTable player = plugin.database.getPlayer(event.getPlayer());
-        if (player == null || player.getBans() == null) return;
-        plugin.database.updateBans(player.getBans());
-        updateBanInfo(event.getPlayer(), player.getBans());
+        if (player == null) return;
+        List<BanTable> bans = player.getBans();
+        plugin.database.updateBans(bans);
+        updateBanInfo(event.getPlayer(), bans);
+    }
+
+    @EventHandler
+    public void onPlayerQuit(PlayerQuitEvent event) {
+        players.remove(event.getPlayer().getUniqueId());
     }
 
     /**

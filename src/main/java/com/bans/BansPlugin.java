@@ -13,7 +13,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class BansPlugin extends JavaPlugin {
-    public final Database database = new Database(this);
+    public Database database;
     public final Commands commands = new Commands(this);
     public final PlayerListener playerListener = new PlayerListener(this);
     private ConnectHandler connectHandler = new ConnectHandler(this);
@@ -23,10 +23,8 @@ public class BansPlugin extends JavaPlugin {
     public void onEnable() {
         reloadConfig();
         saveDefaultConfig();
-        if (!database.init()) {
-            getLogger().info("Installing database for " + getDescription().getName() + " due to first time usage");
-            installDDL();
-        }
+        database = new Database(this);
+        database.init();
         commands.init();
         playerListener.init();
         connectHandler.init();
@@ -34,11 +32,6 @@ public class BansPlugin extends JavaPlugin {
 
     @Override
     public void onDisable() {
-    }
-
-    @Override
-    public List<Class<?>> getDatabaseClasses() {
-        return new Database(this).getDatabaseClasses();
     }
 
     /**

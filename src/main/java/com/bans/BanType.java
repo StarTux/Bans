@@ -1,29 +1,23 @@
 package com.winthier.bans;
 
-import com.avaje.ebean.annotation.EnumValue;
-
 public enum BanType {
-    @EnumValue("ban")
     BAN,
-    @EnumValue("unban")
     UNBAN,
-    @EnumValue("kick")
     KICK,
-    @EnumValue("mute")
     MUTE,
-    @EnumValue("unmute")
     UNMUTE,
-    @EnumValue("jail")
     JAIL,
-    @EnumValue("unjail")
     UNJAIL,
-    @EnumValue("warning")
     WARNING,
-    @EnumValue("warned")
     WARNED,
-    @EnumValue("note")
     NOTE,
     ;
+
+    public final String key;
+
+    BanType() {
+        this.key = name().toLowerCase();
+    }
 
     public BanType lift() {
         switch (this) {
@@ -97,9 +91,5 @@ public enum BanType {
         case BAN: case MUTE: case JAIL: return true;
         default: return false;
         }
-    }
-
-    public static BanType[] getExpiringBans() {
-        return new BanType[]{ BAN, MUTE, JAIL };
     }
 }

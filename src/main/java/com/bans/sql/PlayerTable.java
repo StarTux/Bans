@@ -1,8 +1,5 @@
 package com.winthier.bans.sql;
 
-import com.avaje.ebean.validation.Length;
-import com.avaje.ebean.validation.NotEmpty;
-import com.avaje.ebean.validation.NotNull;
 import java.sql.Timestamp;
 import java.util.Date;
 import java.util.List;
@@ -11,9 +8,6 @@ import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
-import javax.persistence.ManyToOne;
-import javax.persistence.OneToMany;
-import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 import javax.persistence.Version;
@@ -25,21 +19,13 @@ public class PlayerTable {
     @Id
     private Integer id;
 
-    @NotNull
+    @Column(nullable = false)
     private UUID uuid;
 
-    @NotEmpty
-    @Length(max=16)
+    @Column(nullable = false, length = 16)
     private String name;
 
-    @OneToMany(mappedBy = "player")
-    private List<BanTable> bans;
-
-    @OneToMany(mappedBy = "admin")
-    private List<BanTable> issued;
-
-    @NotNull
-    @Column(name = "add_time")
+    @Column(nullable = false)
     private Timestamp addTime;
 
     @Version
@@ -70,11 +56,9 @@ public class PlayerTable {
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
 
-    public List<BanTable> getBans() { return bans; }
-    public void setBans(List<BanTable> bans) { this.bans = bans; }
-
-    public List<BanTable> getIssued() { return issued; }
-    public void setIssued(List<BanTable> issued) { this.issued = issued; }
+    public List<BanTable> getBans() {
+        return Database.getInstance().getDb().find(BanTable.class).eq("player", this).findList();
+    }
 
     public Timestamp getAddTime() { return addTime; }
     public void setAddTime(Timestamp addTime) { this.addTime = addTime; }
