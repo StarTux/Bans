@@ -11,7 +11,9 @@ import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
-public class Msg {
+public final class Msg {
+    private Msg() { }
+
     public static String format(String msg, Object... args) {
         msg = ChatColor.translateAlternateColorCodes('&', msg);
         if (args.length > 0) msg = String.format(msg, args);
@@ -88,6 +90,8 @@ public class Msg {
             String appealMsg = plugin.getConfig().getString("AppealMessage");
             sb.append(Msg.format(appealMsg));
             //sb.append(Msg.format("\n&cAppeal at &9&nhttp://www.winthier.com/appeal"));
+            break;
+        default:
             break;
         }
         return sb.toString();

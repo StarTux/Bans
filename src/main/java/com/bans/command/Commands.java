@@ -5,18 +5,18 @@ import com.winthier.bans.BanType;
 import com.winthier.bans.BansPlugin;
 import com.winthier.bans.PlayerInfo;
 import com.winthier.bans.sql.BanTable;
-import com.winthier.bans.sql.PlayerTable;
-import com.winthier.bans.util.Bans;
 import com.winthier.bans.util.Msg;
 import com.winthier.bans.util.Timespan;
+import com.winthier.playercache.PlayerCache;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import org.bukkit.ChatColor;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
@@ -26,7 +26,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.entity.Player;
 
-public class Commands implements CommandExecutor {
+public final class Commands implements CommandExecutor {
     public final BansPlugin plugin;
     private final Map<PluginCommand, Method> commandMap = new HashMap<PluginCommand, Method>();
 
@@ -77,31 +77,40 @@ public class Commands implements CommandExecutor {
     }
 
     private void storeBan(CommandSender sender, BanTable ban) {
+        List<BanTable> playerBans = plugin.database.getPlayerBans(ban.getPlayer());
         switch (ban.getType()) {
         case BAN:
         case MUTE:
         case JAIL:
-            for (BanTable record : ban.getPlayer().getBans()) {
+            for (BanTable record : playerBans) {
                 if (ban.getType().isActive() && ban.getType() == record.getType()) {
-                    throw new CommandException(Msg.format("Player %s is already %s.", ban.getPlayer().getName(), ban.getType().getPassive()));
+                    throw new CommandException(Msg.format("Player %s is already %s.", ban.getPlayerName(), ban.getType().getPassive()));
                 }
             }
             break;
         case KICK:
-            if (!plugin.isOnline(ban.getPlayer().getUuid())) {
-                throw new CommandException("Player " + ban.getPlayer().getName() + " is not online.");
+            if (!plugin.isOnline(ban.getPlayer())) {
+                throw new CommandException("Player " + ban.getPlayerName() + " is not online.");
             }
+            break;
+        default:
             break;
         }
         plugin.database.storeBan(ban);
         plugin.broadcast(new Ban(ban));
     }
 
-    private void liftBan(CommandSender sender, PlayerTable player, BanType type) {
+    String getPlayerName(UUID uuid) {
+        String name = PlayerCache.nameForUuid(uuid);
+        if (name != null) return name;
+        return "N/A";
+    }
+
+    private void liftBan(CommandSender sender, UUID player, BanType type) {
         boolean failed = false;
         BanType newType = type.lift();
         BanTable found = null;
-        for (BanTable record : player.getBans()) {
+        for (BanTable record : plugin.database.getPlayerBans(player)) {
             if (record.getType() != type) {
                 continue;
             }
@@ -114,11 +123,16 @@ public class Commands implements CommandExecutor {
             plugin.database.storeBan(record);
             found = record;
         }
-        if (failed) throw new CommandException(Msg.format("%s could not be %s: Not your %s.", player.getName(), newType.getPassive(), type.getNiceName().toLowerCase()));
-        if (found == null) throw new CommandException(Msg.format("%s is not %s.", player.getName(), type.getPassive()));
+        if (failed) throw new CommandException(Msg.format("%s could not be %s: Not your %s.", getPlayerName(player), newType.getPassive(), type.getNiceName().toLowerCase()));
+        if (found == null) throw new CommandException(Msg.format("%s is not %s.", getPlayerName(player), type.getPassive()));
         // Set the admin to whoever lifted the ban for the announcement.
         Ban ban = new Ban(found.getId(), found.getType(), new PlayerInfo(found.getPlayer()), (sender instanceof OfflinePlayer ? new PlayerInfo((OfflinePlayer)sender) : null), null, found.getTime(), found.getExpiry());
         plugin.broadcast(ban);
+    }
+
+    UUID getSenderUuid(CommandSender sender) {
+        if (sender instanceof Player) return ((Player)sender).getUniqueId();
+        return null;
     }
 
     public boolean issuePerm(BanType type, CommandSender sender, String[] args) {
@@ -127,13 +141,13 @@ public class Commands implements CommandExecutor {
         String playerName = args[0];
         String reason = Msg.buildMessage(args, 1);
         // Find players
-        PlayerTable player = plugin.database.getPlayerByName(playerName);
+        UUID player = PlayerCache.uuidForName(playerName);
         if (player == null) throw new CommandException("Unknown player: " + playerName);
-        PlayerTable admin = plugin.database.getPlayerBySender(sender);
+        UUID admin = getSenderUuid(sender);
         // Build ban
         BanTable ban = new BanTable(type, player, admin, reason, new Date(), null);
         storeBan(sender, ban);
-        Msg.send(sender, "&ePlayer %s %s.", player.getName(), type.getPassive());
+        Msg.send(sender, "&ePlayer %s %s.", playerName, type.getPassive());
         return true;
     }
 
@@ -147,14 +161,14 @@ public class Commands implements CommandExecutor {
         Timespan timespan = Timespan.parseTimespan(timeArg);
         if (timespan == null) throw new CommandException("Bad time format: " + timeArg);
         // Find players
-        PlayerTable player = plugin.database.getPlayerByName(playerName);
+        UUID player = PlayerCache.uuidForName(playerName);
         if (player == null) throw new CommandException("Unknown player: " + playerName);
-        PlayerTable admin = plugin.database.getPlayerBySender(sender);
+        UUID admin = getSenderUuid(sender);
         // Build ban
         Date now = new Date();
         BanTable ban = new BanTable(type, player, admin, reason, now, timespan.addTo(now));
         storeBan(sender, ban);
-        Msg.send(sender, "&ePlayer %s %s for %s.", player.getName(), type.getPassive(), timespan.toNiceString());
+        Msg.send(sender, "&ePlayer %s %s for %s.", playerName, type.getPassive(), timespan.toNiceString());
         return true;
     }
 
@@ -163,11 +177,11 @@ public class Commands implements CommandExecutor {
         // Build args
         String playerName = args[0];
         // Find player
-        PlayerTable player = plugin.database.getPlayerByName(playerName);
+        UUID player = PlayerCache.uuidForName(playerName);
         if (player == null) throw new CommandException("Unknown player: " + playerName);
         // Lift ban
         liftBan(sender, player, type);
-        Msg.send(sender, "&ePlayer %s %s.", player.getName(), type.lift().getPassive());
+        Msg.send(sender, "&ePlayer %s %s.", playerName, type.lift().getPassive());
         return true;
     }
 
@@ -241,7 +255,7 @@ public class Commands implements CommandExecutor {
         sb.append(Msg.format("&6[&eBan Info&6]"));
         sb.append(Msg.format("\n &7Id: &c%04d", ban.getId()));
         sb.append(Msg.format("\n &7Type: &c%s", ban.getType().getNiceName()));
-        sb.append(Msg.format("\n &7Player: &c%s", ban.getPlayer().getName()));
+        sb.append(Msg.format("\n &7Player: &c%s", ban.getPlayerName()));
         sb.append(Msg.format("\n &7Issued by: &c%s", ban.getAdminName()));
         if (ban.getReason() != null) {
             sb.append(Msg.format("\n &7Reason: &c%s", ban.getReason()));
@@ -314,15 +328,16 @@ public class Commands implements CommandExecutor {
     public boolean mybans(CommandSender sender, String[] args) {
         if (args.length != 0) return false;
         if (!(sender instanceof OfflinePlayer)) throw new CommandException("Player expected");
-        PlayerTable player = plugin.database.getPlayer((OfflinePlayer)sender);
+        UUID player = ((OfflinePlayer)sender).getUniqueId();
+        List<BanTable> playerBans = plugin.database.getPlayerBans(player);
         // Check validity
-        if (player == null || player.getBans() == null || player.getBans().isEmpty()) {
+        if (player == null || playerBans.isEmpty()) {
             Msg.send(sender, "&3No bans on your record.");
             return true;
         }
         StringBuilder sb = new StringBuilder();
         sb.append(Msg.format("&3Your ban record:"));
-        for (BanTable ban : player.getBans()) {
+        for (BanTable ban : playerBans) {
             if (ban.getType() == BanType.NOTE) continue;
             sb.append(Msg.format("\n&b &o%s&3 -&b %s by &o%s&b.", Msg.formatDate(ban.getTime()), ban.getType().unlift().getPassive(), ban.getAdminName()));
             if (ban.getReason() != null) {
@@ -336,23 +351,25 @@ public class Commands implements CommandExecutor {
     public boolean baninfo(CommandSender sender, String[] args) {
         if (args.length != 1) return false;
         String playerName = args[0];
-        PlayerTable player = plugin.database.getPlayer(playerName);
+        UUID player = PlayerCache.uuidForName(playerName);
         // Check validity
         if (player == null) throw new CommandException("Player not found: " + playerName);
-        if (player.getBans() == null) throw new CommandException("No bans: " + playerName);
+        List<BanTable> playerBans = plugin.database.getPlayerBans(player);
+        if (playerBans.isEmpty()) throw new CommandException("No bans: " + playerName);
         // Update
-        plugin.database.updateBans(player.getBans());
+        plugin.database.updateBans(playerBans);
         // Build message
         StringBuilder sb = new StringBuilder();
-        sb.append(Msg.format("&6[&eBan record of &6&o%s&6]", player.getName()));
-        if (player.getBans().isEmpty()) {
+        sb.append(Msg.format("&6[&eBan record of &6&o%s&6]", playerName));
+        if (playerBans.isEmpty()) {
             sb.append(Msg.format("\n&e No entries found"));
             sender.sendMessage(sb.toString());
             return true;
         }
         Map<BanType, Integer> count = new EnumMap<BanType, Integer>(BanType.class);
         for (BanType type : BanType.values()) count.put(type, 0);
-        for (BanTable ban : Bans.orderByTime(player.getBans())) {
+        Collections.sort(playerBans, (o1, o2) -> o1.getTime().compareTo(o2.getTime()));
+        for (BanTable ban : playerBans) {
             if (ban.getType() == BanType.NOTE) {
                 if (!sender.hasPermission("bans.note")) continue;
             }
@@ -396,14 +413,6 @@ public class Commands implements CommandExecutor {
     public boolean bans(CommandSender sender, String[] args) {
         if (args.length == 0) {
             return false;
-        } else if (args.length == 1 && "ImportPlayers".equalsIgnoreCase(args[0])) {
-            OfflinePlayer[] players = plugin.getServer().getOfflinePlayers();
-            sender.sendMessage("Importing " + players.length + " players...");
-            int i = 0;
-            for (OfflinePlayer player : players) {
-                plugin.database.getPlayer(player);
-                if (++i % 1000 == 0) sender.sendMessage("Imported " + i + "/" + players.length + " players.");
-            }
         } else if (args.length == 1 && "UpdateBans".equalsIgnoreCase(args[0])) {
             plugin.database.updateAllBans();
             sender.sendMessage("Updated all bans. See console.");

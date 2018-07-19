@@ -6,11 +6,13 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import lombok.Getter;
 
 /**
  * Simple storage class to communicate bans across servers.
  */
-public class Ban implements Serializable {
+@Getter
+public final class Ban implements Serializable {
     private final int id;
     private final BanType type;
     private final PlayerInfo player;
@@ -32,14 +34,6 @@ public class Ban implements Serializable {
     public Ban(BanTable ban) {
         this(ban.getId(), ban.getType(), new PlayerInfo(ban.getPlayer()), ban.getAdmin() == null ? null : new PlayerInfo(ban.getAdmin()), ban.getReason(), ban.getTime(), ban.getExpiry());
     }
-
-    public int getId() { return id; }
-    public BanType getType() { return type; }
-    public PlayerInfo getPlayer() { return player; }
-    public PlayerInfo getAdmin() { return admin; }
-    public String getReason() { return reason; }
-    public Date getTime() { return time; }
-    public Date getExpiry() { return expiry; }
 
     public String getAdminName() {
         return admin == null ? "Console" : admin.getName();
@@ -73,7 +67,7 @@ public class Ban implements Serializable {
         Date expiry = fetchDate(map, "expiry");
         return new Ban(id, type, player, admin, reason, time, expiry);
     }
-    
+
     @SuppressWarnings("unchecked")
     private static void store(Map<String, Object> map, String key, Object value) {
         if (value == null) return;

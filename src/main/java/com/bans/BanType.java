@@ -10,8 +10,7 @@ public enum BanType {
     UNJAIL,
     WARNING,
     WARNED,
-    NOTE,
-    ;
+    NOTE;
 
     public final String key;
 

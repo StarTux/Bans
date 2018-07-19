@@ -1,15 +1,15 @@
 package com.winthier.bans.listener;
 
-import org.bukkit.event.Listener;
-import org.bukkit.event.EventHandler;
-import com.winthier.chat.event.ChatPlayerTalkEvent;
-import org.bukkit.entity.Player;
-import lombok.RequiredArgsConstructor;
 import com.winthier.bans.Ban;
 import com.winthier.bans.util.Msg;
+import com.winthier.chat.event.ChatPlayerTalkEvent;
+import lombok.RequiredArgsConstructor;
+import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
 
 @RequiredArgsConstructor
-public class ChatListener implements Listener {
+public final class ChatListener implements Listener {
     final PlayerListener playerListener;
 
     @EventHandler

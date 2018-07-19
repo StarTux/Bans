@@ -6,7 +6,7 @@ import java.util.Map;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 
-public class ConnectHandler implements Listener {
+public final class ConnectHandler implements Listener {
     public final BansPlugin plugin;
 
     public ConnectHandler(BansPlugin plugin) {

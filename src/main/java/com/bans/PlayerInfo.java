@@ -1,6 +1,6 @@
 package com.winthier.bans;
 
-import com.winthier.bans.sql.PlayerTable;
+import com.winthier.playercache.PlayerCache;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
@@ -8,9 +8,19 @@ import java.util.UUID;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 
-public class PlayerInfo implements Serializable {
+public final class PlayerInfo implements Serializable {
     private final UUID uuid;
     private final String name;
+
+    public PlayerInfo(UUID uuid) {
+        this.uuid = uuid;
+        String n = PlayerCache.nameForUuid(uuid);
+        if (n != null) {
+            this.name = n;
+        } else {
+            this.name = "N/A";
+        }
+    }
 
     public PlayerInfo(UUID uuid, String name) {
         this.uuid = uuid;
@@ -19,10 +29,6 @@ public class PlayerInfo implements Serializable {
 
     public PlayerInfo(OfflinePlayer player) {
         this(player.getUniqueId(), player.getName());
-    }
-
-    public PlayerInfo(PlayerTable player) {
-        this(player.getUuid(), player.getName());
     }
 
     public UUID getUuid() {

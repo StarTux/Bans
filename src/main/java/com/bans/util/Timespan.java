@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class Timespan {
+public final class Timespan {
     public final long amount;
     public final TimeUnit unit;
 
@@ -68,21 +68,20 @@ public class Timespan {
 
 enum TimeUnit {
     MINUTE("m", 1),
-    HOUR  ("h", 60),
-    DAY   ("d", 60 * 24),
-    WEEK  ("w", 60 * 24 * 7),
-    MONTH ("M", 60 * 24 * 30),
-    YEAR  ("y", 60 * 24 * 365),
-    ;
+    HOUR("h", 60),
+    DAY("d", 60 * 24),
+    WEEK("w", 60 * 24 * 7),
+    MONTH("M", 60 * 24 * 30),
+    YEAR("y", 60 * 24 * 365);
 
     public final String shortName;
     public final long millis;
-    private final static Map<String, TimeUnit> names = new HashMap<String, TimeUnit>();
+    private static final Map<String, TimeUnit> NAMES = new HashMap<String, TimeUnit>();
 
     static {
         for (TimeUnit unit : TimeUnit.values()) {
-            names.put(unit.shortName, unit);
-            names.put(unit.name().toLowerCase(), unit);
+            NAMES.put(unit.shortName, unit);
+            NAMES.put(unit.name().toLowerCase(), unit);
         }
     }
 
@@ -92,8 +91,8 @@ enum TimeUnit {
     }
 
     public static TimeUnit fromString(String string) {
-        TimeUnit result = names.get(string);
+        TimeUnit result = NAMES.get(string);
         if (result != null) return result;
-        return names.get(string.toLowerCase());
+        return NAMES.get(string.toLowerCase());
     }
 }

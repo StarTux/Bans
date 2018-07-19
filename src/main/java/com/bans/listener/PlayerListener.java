@@ -4,7 +4,6 @@ import com.winthier.bans.Ban;
 import com.winthier.bans.BanType;
 import com.winthier.bans.BansPlugin;
 import com.winthier.bans.sql.BanTable;
-import com.winthier.bans.sql.PlayerTable;
 import com.winthier.bans.util.Msg;
 import java.util.Collections;
 import java.util.List;
@@ -22,7 +21,7 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.scheduler.BukkitRunnable;
 
-public class PlayerListener implements Listener {
+public final class PlayerListener implements Listener {
     public final BansPlugin plugin;
     private final Map<UUID, BanInfo> players = Collections.<UUID, BanInfo>synchronizedMap(new WeakHashMap<UUID, BanInfo>());
     private ChatListener chatListener = null;
@@ -86,6 +85,8 @@ public class PlayerListener implements Listener {
             case UNJAIL: case UNMUTE:
                 Msg.send(player, "&cYou have been %s by &o%s&c.", ban.getType().getPassive(), ban.getAdminName());
                 break;
+            default:
+                break;
             }
         }
     }
@@ -109,6 +110,8 @@ public class PlayerListener implements Listener {
             case JAIL:
                 banInfo.setJail(new Ban(ban));
                 break;
+            default:
+                break;
             }
         }
     }
@@ -118,7 +121,7 @@ public class PlayerListener implements Listener {
      * player joins or their ban record may have changed.
      */
     public void updateBanInfo(Player player) {
-        updateBanInfo(player, plugin.database.getPlayer(player).getBans());
+        updateBanInfo(player, plugin.database.getPlayerBans(player.getUniqueId()));
     }
 
     /**
@@ -126,10 +129,9 @@ public class PlayerListener implements Listener {
      * cache. Call this whenever a chached ban may have changed.
      */
     public void updatePlayerBans(Player player) {
-        PlayerTable table = plugin.database.getPlayer(player);
-        if (table == null || table.getBans() == null) return;
-        plugin.database.updateBans(table.getBans());
-        updateBanInfo(player, table.getBans());
+        List<BanTable> bans = plugin.database.getPlayerBans(player.getUniqueId());
+        plugin.database.updateBans(bans);
+        updateBanInfo(player, bans);
     }
 
     public void updatePlayerBansLater(UUID uuid) {
@@ -158,25 +160,26 @@ public class PlayerListener implements Listener {
      */
     @EventHandler
     public void onAsyncPlayerPreLogin(AsyncPlayerPreLoginEvent event) {
-        PlayerTable player = plugin.database.getPlayerNoCreate(event.getUniqueId());
-        if (player == null) return;
+        List<BanTable> bans = plugin.database.getPlayerBans(event.getUniqueId());
         boolean update = false;
-        for (BanTable ban : player.getBans()) {
+        for (BanTable ban: bans) {
             switch (ban.getType()) {
             case BAN:
                 if (ban.hasExpired()) {
-                    updatePlayerBansLater(player.getUuid());
+                    updatePlayerBansLater(event.getUniqueId());
                 } else {
                     event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_BANNED, Msg.getBanMessage(plugin, ban));
                 }
                 break;
             case WARNING:
                 if (ban.hasExpired()) {
-                    updatePlayerBansLater(player.getUuid());
+                    updatePlayerBansLater(event.getUniqueId());
                 } else {
                     liftBanLater(ban);
                     event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_OTHER, Msg.getBanMessage(plugin, ban));
                 }
+                break;
+            default:
                 break;
             }
         }
@@ -189,11 +192,7 @@ public class PlayerListener implements Listener {
      */
     @EventHandler(priority = EventPriority.LOW)
     public void onPlayerJoin(PlayerJoinEvent event) {
-        PlayerTable player = plugin.database.getPlayer(event.getPlayer());
-        if (player == null) return;
-        List<BanTable> bans = player.getBans();
-        plugin.database.updateBans(bans);
-        updateBanInfo(event.getPlayer(), bans);
+        updatePlayerBans(event.getPlayer());
     }
 
     @EventHandler

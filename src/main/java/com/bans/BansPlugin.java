@@ -3,7 +3,6 @@ package com.winthier.bans;
 import com.winthier.bans.command.Commands;
 import com.winthier.bans.listener.PlayerListener;
 import com.winthier.bans.sql.Database;
-import com.winthier.bans.util.Msg;
 import java.util.List;
 import java.util.UUID;
 import org.bukkit.Location;
@@ -12,8 +11,8 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
-public class BansPlugin extends JavaPlugin {
-    public Database database;
+public final class BansPlugin extends JavaPlugin {
+    public final Database database = new Database(this);
     public final Commands commands = new Commands(this);
     public final PlayerListener playerListener = new PlayerListener(this);
     private ConnectHandler connectHandler = new ConnectHandler(this);
@@ -23,7 +22,6 @@ public class BansPlugin extends JavaPlugin {
     public void onEnable() {
         reloadConfig();
         saveDefaultConfig();
-        database = new Database(this);
         database.init();
         commands.init();
         playerListener.init();
