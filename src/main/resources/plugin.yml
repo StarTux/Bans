@@ -2,6 +2,8 @@ name: Bans
 description: Ban management for Winthier
 author: StarTux
 version: 0.1
+website: https://cavetale.com
+api-version: 1.13
 main: com.winthier.bans.BansPlugin
 depend: [ SQL ]
 softdepend: [ Connect, Chat ]

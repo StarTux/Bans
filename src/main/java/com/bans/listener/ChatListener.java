@@ -11,7 +11,7 @@ import com.winthier.bans.util.Msg;
 @RequiredArgsConstructor
 public class ChatListener implements Listener {
     final PlayerListener playerListener;
-    
+
     @EventHandler
     public void onChatPlayerTalk(ChatPlayerTalkEvent event) {
         final Player player = event.getPlayer();
