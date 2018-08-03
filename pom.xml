@@ -6,7 +6,7 @@
   <packaging>jar</packaging>
   <version>0.1-SNAPSHOT</version>
   <name>Bans</name>
-  <url>http://www.winthier.com</url>
+  <url>https://cavetale.com</url>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
@@ -22,7 +22,7 @@
     <dependency>
       <groupId>org.spigotmc</groupId>
       <artifactId>spigot-api</artifactId>
-      <version>1.13-pre7-R0.1-SNAPSHOT</version>
+      <version>1.13-R0.1-SNAPSHOT</version>
     </dependency>
     <!-- Lombok -->
     <dependency>
