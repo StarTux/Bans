@@ -19,10 +19,10 @@ import org.bukkit.command.CommandSender;
 public final class BanTable {
     @Id private Integer id;
     @Column(nullable = false) private UUID player;
-    private UUID admin;
-    private String reason;
+    @Column(nullable = true) private UUID admin;
+    @Column(nullable = true, length = 255) private String reason;
     @Column(nullable = false) private Date time;
-    private Date expiry;
+    @Column(nullable = true) private Date expiry;
     @Version private Integer version;
     @Column(nullable = false, length = 7, name = "type") private String typeName;
 
