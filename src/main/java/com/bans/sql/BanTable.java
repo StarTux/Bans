@@ -5,8 +5,8 @@ import com.winthier.playercache.PlayerCache;
 import java.util.Date;
 import java.util.UUID;
 import javax.persistence.Column;
-import javax.persistence.Entity;
 import javax.persistence.Id;
+import javax.persistence.Index;
 import javax.persistence.Table;
 import javax.persistence.Version;
 import lombok.Getter;
@@ -15,7 +15,9 @@ import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
 
-@Entity @Getter @Setter @Table(name = "bans")
+@Getter @Setter
+@Table(name = "bans",
+       indexes = @Index(columnList = "player"))
 public final class BanTable {
     @Id private Integer id;
     @Column(nullable = false) private UUID player;
@@ -23,7 +25,6 @@ public final class BanTable {
     @Column(nullable = true, length = 255) private String reason;
     @Column(nullable = false) private Date time;
     @Column(nullable = true) private Date expiry;
-    @Version private Integer version;
     @Column(nullable = false, length = 7, name = "type") private String typeName;
 
     public BanTable() { }
