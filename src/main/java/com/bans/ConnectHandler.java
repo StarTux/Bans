@@ -1,7 +1,7 @@
 package com.winthier.bans;
 
 import com.winthier.connect.Connect;
-import com.winthier.connect.bukkit.event.ConnectMessageEvent;
+import com.winthier.connect.event.ConnectMessageEvent;
 import java.util.Map;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
