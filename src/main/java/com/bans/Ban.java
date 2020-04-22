@@ -88,7 +88,11 @@ public final class Ban implements Serializable {
     }
 
     static int fetchInt(Map<String, Object> map, String key) {
-        return Integer.parseInt(fetchString(map, key));
+        Object o = map.get(key);
+        if (o instanceof Number) {
+            return ((Number) o).intValue();
+        }
+        return Integer.parseInt(o.toString());
     }
 
     static UUID fetchUuid(Map<String, Object> map, String key) {
