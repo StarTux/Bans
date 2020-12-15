@@ -469,20 +469,12 @@ public final class Commands implements CommandExecutor {
             if (ban.getType() == BanType.NOTE) {
                 if (!sender.hasPermission("bans.note")) continue;
             }
-            sb.append("\n ");
-            if (ban.getType().isActive()) {
-                sb.append(Msg.format("&4&l"));
-            } else {
-                sb.append(Msg.format("&c"));
-            }
-            sb.append(Msg.format("%s &e[&f%04d&e] &7%s", ban.getType().getNiceName(), ban.getId(), Msg.formatDate(ban.getTime())));
-            if (ban.getExpiry() != null) {
-                sb.append(Msg.format(" &8%s &f(&7%s&f)", Msg.formatDate(ban.getExpiry()), Timespan.difference(ban.getTime(), ban.getExpiry())));
-            }
-            sb.append("\n ");
-            String reason = ban.getReason();
-            if (reason == null) reason = "N/A";
-            sb.append(Msg.format("&7&o%s&8:&f %s", ban.getAdminName(), reason));
+            sb.append("\n");
+            String banColor = Msg.format(ban.getType().isActive() ? "&4&l" : "&c");
+            sb.append(Msg.format("&e[&f%04d&e] %s%s&7 %s&r %s&8/&e%s&7 %s",
+                                 ban.getId(), banColor, ban.getType().getNiceName(),
+                                 Msg.formatDateShort(ban.getTime()),
+                                 ban.getPlayerName(), ban.getAdminName(), ban.getReason()));
         }
         sender.sendMessage(sb.toString());
     }

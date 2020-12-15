@@ -27,13 +27,18 @@ public final class Msg {
     public static String formatDate(Date date) {
         Calendar cal = Calendar.getInstance();
         cal.setTime(date);
-        String result = String.format("%s %02d %02d %02d:%02d",
-                                      DateFormatSymbols.getInstance().getShortMonths()[cal.get(Calendar.MONTH)],
-                                      cal.get(Calendar.DAY_OF_MONTH),
-                                      cal.get(Calendar.YEAR),
-                                      cal.get(Calendar.HOUR_OF_DAY),
-                                      cal.get(Calendar.MINUTE));
-        return result;
+        return String.format("%s %02d %02d %02d:%02d",
+                             DateFormatSymbols.getInstance().getShortMonths()[cal.get(Calendar.MONTH)],
+                             cal.get(Calendar.DAY_OF_MONTH),
+                             cal.get(Calendar.YEAR),
+                             cal.get(Calendar.HOUR_OF_DAY),
+                             cal.get(Calendar.MINUTE));
+    }
+
+    public static String formatDateShort(Date date) {
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(date);
+        return String.format("%d/%d", cal.get(Calendar.MONTH) + 1, cal.get(Calendar.DAY_OF_MONTH));
     }
 
     /**
