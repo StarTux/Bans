@@ -15,12 +15,10 @@ import org.bukkit.entity.Player;
 
 @Getter
 public final class Database {
-    @Getter private static Database instance;
     public final BansPlugin plugin;
     private SQLDatabase db;
 
-    public Database(BansPlugin plugin) {
-        instance = this;
+    public Database(final BansPlugin plugin) {
         this.plugin = plugin;
     }
 
@@ -64,7 +62,10 @@ public final class Database {
     }
 
     public void updateAllBans() {
-        List<BanTable> list = db.find(BanTable.class).where().in("type", Arrays.asList(BanType.BAN.key, BanType.MUTE.key, BanType.JAIL.key)).isNotNull("expiry").findList();
+        List<BanTable> list = db.find(BanTable.class).where()
+            .in("type", Arrays.asList(BanType.BAN.key, BanType.MUTE.key, BanType.JAIL.key))
+            .isNotNull("expiry")
+            .findList();
         updateBans(list);
     }
 

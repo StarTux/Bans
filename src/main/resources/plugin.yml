@@ -9,145 +9,150 @@ depend: [ SQL ]
 softdepend: [ Connect, Chat ]
 commands:
   bans:
-    description: Admin interface.
+    description: Admin interface
     usage: |-
-      /<command> SetJail - Set jail location.
-      /<command> UpdateBans - Update ban expiries.
-      /<command> ImportPlayers - import all known players.
-      /<command> ImportBans - import old bans.
+      /<command> SetJail - Set jail location
+      /<command> UpdateBans - Update ban expiries
     permission: bans.admin
   ban:
-    description: Ban a player.
+    description: Ban a player
     usage: /<command> <player> [reason]
     permission: bans.ban
   tempban:
-    description: Temporarily ban a player.
+    description: Temporarily ban a player
     usage: /<command> <player> <time> [reason]
     permission: bans.tempban
   unban:
-    description: Lift a ban.
+    description: Lift a ban
     usage: /<command> <player>
     permission: bans.unban
   mute:
-    description: Mute a player.
+    description: Mute a player
     usage: /<command> <player> [reason]
     permission: bans.mute
   tempmute:
-    description: Temporarily mute a player.
+    description: Temporarily mute a player
     usage: /<command> <player> <time> [reason]
     permission: bans.tempmute
   unmute:
-    description: Allow a player to speak again.
+    description: Allow a player to speak again
     usage: /<command> <player>
     permission: bans.unmute
   kick:
-    description: Kick a player.
+    description: Kick a player
     usage: /<command> <player> [reason]
     permission: bans.kick
   jail:
-    description: Jail a player.
+    description: Jail a player
     usage: /<command> <player> [reason]
     permission: bans.jail
   tempjail:
-    description: Temporarily jail a player.
+    description: Temporarily jail a player
     usage: /<command> <player> <time> [reason]
     permission: bans.tempjail
   unjail:
-    description: Release a player from jail.
+    description: Release a player from jail
     usage: /<command> <player>
     permission: bans.unjail
   warn:
-    description: Warn a player.
+    description: Warn a player
     usage: /<command> <player> <message>
     permission: bans.warn
   note:
-    description: Put a note on a player.
+    description: Put a note on a player
     usage: /<command> <player> <message>
     permission: bans.note
   baninfo:
-    description: Lookup ban information on a player.
+    description: Lookup ban information on a player
     usage: /<command> <player> [type]
     permission: bans.baninfo
   mybans:
-    description: Lookup your own record.
+    description: Lookup your own record
     usage: /<command>
     permission: bans.mybans
   deleteban:
-    description: Delete a ban record.
+    description: Delete a ban record
     usage: /<command> <id>
     permission: bans.deleteban
   editban:
-    description: Change a ban reason.
+    description: Change a ban reason
     usage: /<command> <id> <reason>
     permission: bans.editban
   showban:
-    description: Look up a ban by id.
+    description: Look up a ban by id
     usage: /<command> <id>
     permission: bans.showban
+  banlist:
+    description: List all bans
+    usage: /banlist [page]
+    permission: bans.banlist
 permissions:
   bans.admin:
     description: Use the admin interface
     default: op
   bans.ban:
-    description: Ban players.
+    description: Ban players
     default: op
   bans.tempban:
-    description: Temp ban players.
+    description: Temp ban players
     default: op
   bans.unban:
-    description: Unban players.
+    description: Unban players
     default: op
   bans.mute:
-    description: Mute players.
+    description: Mute players
     default: op
   bans.tempmute:
-    description: Temp mute players.
+    description: Temp mute players
     default: op
   bans.unmute:
-    description: Unmute players.
+    description: Unmute players
     default: op
   bans.kick:
-    description: Kick players.
+    description: Kick players
     default: op
   bans.jail:
-    description: Jail players.
+    description: Jail players
     default: op
   bans.tempjail:
-    description: Temp jail players.
+    description: Temp jail players
     default: op
   bans.unjail:
-    description: Unjail players.
+    description: Unjail players
     default: op
   bans.warn:
-    description: Warn players.
+    description: Warn players
     default: op
   bans.note:
-    description: Leave a note on players.
+    description: Leave a note on players
     default: op
   bans.notify:
-    description: Get notifed when a player is punished.
+    description: Get notifed when a player is punished
     default: op
   bans.baninfo:
-    description: Use the "/baninfo" command.
+    description: Use the "/baninfo" command
     default: op
   bans.mybans:
-    description: Use the "/mybans" command.
+    description: Use the "/mybans" command
     default: op
   bans.deleteban:
-    description: Use the "/deleteban" command.
+    description: Use the "/deleteban" command
     default: op
   bans.editban:
-    description: Use the "/editban" command.
+    description: Use the "/editban" command
     default: op
   bans.showban:
-    description: Use the "/showban" command.
+    description: Use the "/showban" command
     default: op
   bans.override.lift:
-    description: Lift bans made by other admins.
+    description: Lift bans made by other admins
     default: op
   bans.override.delete:
-    description: Delete ban records made by other admins.
+    description: Delete ban records made by other admins
     default: op
   bans.override.edit:
-    description: Edit ban records made by other admins.
+    description: Edit ban records made by other admins
+    default: op
+  bans.banlist:
+    description: Use the "/banlist" command
     default: op

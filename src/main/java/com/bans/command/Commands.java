@@ -30,7 +30,7 @@ public final class Commands implements CommandExecutor {
     public final BansPlugin plugin;
     private final Map<PluginCommand, Method> commandMap = new HashMap<PluginCommand, Method>();
 
-    public Commands(BansPlugin plugin) {
+    public Commands(final BansPlugin plugin) {
         this.plugin = plugin;
     }
 
@@ -58,7 +58,7 @@ public final class Commands implements CommandExecutor {
             return false;
         }
         try {
-            return (boolean)method.invoke(this, sender, args);
+            return (boolean) method.invoke(this, sender, args);
         } catch (IllegalAccessException iae) {
             iae.printStackTrace();
             sender.sendMessage("" + ChatColor.RED + "An internal error occured. Please report this incident.");
@@ -123,15 +123,21 @@ public final class Commands implements CommandExecutor {
             plugin.database.storeBan(record);
             found = record;
         }
-        if (failed) throw new CommandException(Msg.format("%s could not be %s: Not your %s.", getPlayerName(player), newType.getPassive(), type.getNiceName().toLowerCase()));
+        if (failed) {
+            throw new CommandException(Msg.format("%s could not be %s: Not your %s.",
+                                                  getPlayerName(player), newType.getPassive(),
+                                                  type.getNiceName().toLowerCase()));
+        }
         if (found == null) throw new CommandException(Msg.format("%s is not %s.", getPlayerName(player), type.getPassive()));
         // Set the admin to whoever lifted the ban for the announcement.
-        Ban ban = new Ban(found.getId(), found.getType(), new PlayerInfo(found.getPlayer()), (sender instanceof OfflinePlayer ? new PlayerInfo((OfflinePlayer)sender) : null), null, found.getTime(), found.getExpiry());
+        Ban ban = new Ban(found.getId(), found.getType(), new PlayerInfo(found.getPlayer()),
+                          (sender instanceof OfflinePlayer ? new PlayerInfo((OfflinePlayer) sender) : null),
+                          null, found.getTime(), found.getExpiry());
         plugin.broadcast(ban);
     }
 
     UUID getSenderUuid(CommandSender sender) {
-        if (sender instanceof Player) return ((Player)sender).getUniqueId();
+        if (sender instanceof Player) return ((Player) sender).getUniqueId();
         return null;
     }
 
@@ -328,7 +334,7 @@ public final class Commands implements CommandExecutor {
     public boolean mybans(CommandSender sender, String[] args) {
         if (args.length != 0) return false;
         if (!(sender instanceof OfflinePlayer)) throw new CommandException("Player expected");
-        UUID player = ((OfflinePlayer)sender).getUniqueId();
+        UUID player = ((OfflinePlayer) sender).getUniqueId();
         List<BanTable> playerBans = plugin.database.getPlayerBans(player);
         // Check validity
         if (player == null || playerBans.isEmpty()) {
@@ -418,12 +424,66 @@ public final class Commands implements CommandExecutor {
             sender.sendMessage("Updated all bans. See console.");
         } else if (args.length == 1 && "SetJail".equalsIgnoreCase(args[0])) {
             if (!(sender instanceof Player)) throw new CommandException("Player expected");
-            plugin.setJailLocation(((Player)sender).getLocation());
+            plugin.setJailLocation(((Player) sender).getLocation());
             Msg.send(sender, "&eJail location set");
         } else if (args.length == 1 && "Reload".equalsIgnoreCase(args[0])) {
             plugin.reloadConfig();
             Msg.send(sender, "&eConfiguration reloaded");
         }
         return true;
+    }
+
+    public boolean banlist(CommandSender sender, String[] args) {
+        if (args.length > 1) return false;
+        final int page;
+        if (args.length >= 1) {
+            try {
+                page = Integer.parseInt(args[0]);
+            } catch (NumberFormatException nfe) {
+                sender.sendMessage("Invalid page: " + args[0]);
+                return true;
+            }
+            if (page < 1) {
+                sender.sendMessage("Invalid page: " + page);
+                return true;
+            }
+        } else {
+            page = 1;
+        }
+        plugin.database.getDb().find(BanTable.class)
+            .limit(10)
+            .offset((page - 1) * 10)
+            .orderByDescending("time")
+            .findListAsync(list -> banlistCallback(sender, list, page));
+        return true;
+    }
+
+    void banlistCallback(CommandSender sender, List<BanTable> list, int page) {
+        if (list.isEmpty()) {
+            sender.sendMessage(ChatColor.RED + "Page " + page + " is empty!");
+            return;
+        }
+        StringBuilder sb = new StringBuilder();
+        sb.append(ChatColor.YELLOW + "Bans list (page " + page + ")");
+        for (BanTable ban : list) {
+            if (ban.getType() == BanType.NOTE) {
+                if (!sender.hasPermission("bans.note")) continue;
+            }
+            sb.append("\n ");
+            if (ban.getType().isActive()) {
+                sb.append(Msg.format("&4&l"));
+            } else {
+                sb.append(Msg.format("&c"));
+            }
+            sb.append(Msg.format("%s &e[&f%04d&e] &7%s", ban.getType().getNiceName(), ban.getId(), Msg.formatDate(ban.getTime())));
+            if (ban.getExpiry() != null) {
+                sb.append(Msg.format(" &8%s &f(&7%s&f)", Msg.formatDate(ban.getExpiry()), Timespan.difference(ban.getTime(), ban.getExpiry())));
+            }
+            sb.append("\n ");
+            String reason = ban.getReason();
+            if (reason == null) reason = "N/A";
+            sb.append(Msg.format("&7&o%s&8:&f %s", ban.getAdminName(), reason));
+        }
+        sender.sendMessage(sb.toString());
     }
 }
