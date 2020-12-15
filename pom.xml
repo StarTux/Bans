@@ -1,28 +1,36 @@
 <project>
   <modelVersion>4.0.0</modelVersion>
+
   <groupId>com.winthier.bans</groupId>
   <artifactId>bans</artifactId>
-  <packaging>jar</packaging>
   <version>0.1-SNAPSHOT</version>
+
   <name>Bans</name>
+  <packaging>jar</packaging>
   <url>https://cavetale.com</url>
+
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
   <repositories>
+
     <!-- Spigot Repo -->
     <repository>
       <id>spigot-repo</id>
       <url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
     </repository>
+
   </repositories>
   <dependencies>
+
     <!-- Spigot-API -->
     <dependency>
       <groupId>org.spigotmc</groupId>
       <artifactId>spigot-api</artifactId>
       <version>1.16.4-R0.1-SNAPSHOT</version>
+      <scope>provided</scope>
     </dependency>
+
     <!-- Lombok -->
     <dependency>
       <groupId>org.projectlombok</groupId>
@@ -30,6 +38,7 @@
       <version>1.18.16</version>
       <scope>provided</scope>
     </dependency>
+
     <!-- PlayerCache -->
     <dependency>
       <groupId>com.winthier.playercache</groupId>
@@ -37,6 +46,7 @@
       <version>0.1-SNAPSHOT</version>
       <scope>provided</scope>
     </dependency>
+
     <!-- Connect -->
     <dependency>
       <groupId>com.winthier.connect</groupId>
@@ -44,6 +54,7 @@
       <version>0.1-SNAPSHOT</version>
       <scope>provided</scope>
     </dependency>
+
     <!-- Chat -->
     <dependency>
       <groupId>com.winthier.chat</groupId>
@@ -51,6 +62,7 @@
       <version>0.1-SNAPSHOT</version>
       <scope>provided</scope>
     </dependency>
+
     <!-- SQL -->
     <dependency>
       <groupId>com.winthier.sql</groupId>
@@ -58,10 +70,12 @@
       <version>0.1-SNAPSHOT</version>
       <scope>provided</scope>
     </dependency>
+
   </dependencies>
   <build>
     <finalName>${project.name}</finalName>
     <plugins>
+
       <!-- Java 8 -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -77,6 +91,7 @@
           </compilerArgs>
         </configuration>
       </plugin>
+
     </plugins>
   </build>
 </project>

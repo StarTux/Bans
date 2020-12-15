@@ -25,7 +25,8 @@ public final class PlayerListener implements Listener {
     public final BansPlugin plugin;
     private final Map<UUID, BanInfo> players = Collections.<UUID, BanInfo>synchronizedMap(new WeakHashMap<UUID, BanInfo>());
     private ChatListener chatListener = null;
-    public PlayerListener(BansPlugin plugin) {
+
+    public PlayerListener(final BansPlugin plugin) {
         this.plugin = plugin;
     }
 

@@ -57,8 +57,8 @@ public final class BansPlugin extends JavaPlugin {
                 double x = config.getDouble("x", dfl.getX());
                 double y = config.getDouble("y", dfl.getX());
                 double z = config.getDouble("z", dfl.getX());
-                float yaw = (float)config.getDouble("yaw");
-                float pitch = (float)config.getDouble("pitch");
+                float yaw = (float) config.getDouble("yaw");
+                float pitch = (float) config.getDouble("pitch");
                 jailLocation = new Location(world, x, y, z, yaw, pitch);
             } catch (NullPointerException npe) {
                 jailLocation = dfl;

@@ -10,7 +10,7 @@ public final class Timespan {
     public final long amount;
     public final TimeUnit unit;
 
-    private Timespan(long amount, TimeUnit unit) {
+    private Timespan(final long amount, final TimeUnit unit) {
         this.amount = amount;
         this.unit = unit;
     }
@@ -85,7 +85,7 @@ enum TimeUnit {
         }
     }
 
-    TimeUnit(String shortName, long minutes) {
+    TimeUnit(final String shortName, final long minutes) {
         this.shortName = shortName;
         millis = minutes * 60 * 1000;
     }

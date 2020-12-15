@@ -8,7 +8,6 @@ import javax.persistence.Column;
 import javax.persistence.Id;
 import javax.persistence.Index;
 import javax.persistence.Table;
-import javax.persistence.Version;
 import lombok.Getter;
 import lombok.Setter;
 import org.bukkit.Bukkit;
@@ -29,7 +28,7 @@ public final class BanTable {
 
     public BanTable() { }
 
-    public BanTable(BanType type, UUID player, UUID admin, String reason, Date time, Date expiry) {
+    public BanTable(final BanType type, final UUID player, final UUID admin, final String reason, final Date time, final Date expiry) {
         setType(type);
         setPlayer(player);
         setAdmin(admin);
@@ -63,7 +62,7 @@ public final class BanTable {
         if (admin == null) {
             return sender.equals(Bukkit.getServer().getConsoleSender());
         } else if (sender instanceof OfflinePlayer) {
-            OfflinePlayer op = (OfflinePlayer)sender;
+            OfflinePlayer op = (OfflinePlayer) sender;
             return admin.equals(op.getUniqueId());
         }
         return false;

@@ -12,7 +12,7 @@ public final class PlayerInfo implements Serializable {
     private final UUID uuid;
     private final String name;
 
-    public PlayerInfo(UUID uuid) {
+    public PlayerInfo(final UUID uuid) {
         this.uuid = uuid;
         String n = PlayerCache.nameForUuid(uuid);
         if (n != null) {
@@ -22,12 +22,12 @@ public final class PlayerInfo implements Serializable {
         }
     }
 
-    public PlayerInfo(UUID uuid, String name) {
+    public PlayerInfo(final UUID uuid, final String name) {
         this.uuid = uuid;
         this.name = name;
     }
 
-    public PlayerInfo(OfflinePlayer player) {
+    public PlayerInfo(final OfflinePlayer player) {
         this(player.getUniqueId(), player.getName());
     }
 

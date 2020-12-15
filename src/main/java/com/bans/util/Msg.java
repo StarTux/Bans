@@ -27,7 +27,12 @@ public final class Msg {
     public static String formatDate(Date date) {
         Calendar cal = Calendar.getInstance();
         cal.setTime(date);
-        String result = String.format("%s %02d %02d %02d:%02d", DateFormatSymbols.getInstance().getShortMonths()[cal.get(Calendar.MONTH)], cal.get(Calendar.DAY_OF_MONTH), cal.get(Calendar.YEAR), cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE));
+        String result = String.format("%s %02d %02d %02d:%02d",
+                                      DateFormatSymbols.getInstance().getShortMonths()[cal.get(Calendar.MONTH)],
+                                      cal.get(Calendar.DAY_OF_MONTH),
+                                      cal.get(Calendar.YEAR),
+                                      cal.get(Calendar.HOUR_OF_DAY),
+                                      cal.get(Calendar.MINUTE));
         return result;
     }
 
@@ -53,13 +58,16 @@ public final class Msg {
         if (ban.getType() == BanType.NOTE) return;
         String msg;
         if (ban.getType().isLifted()) {
-            msg = format("&e&o%s&e was %s by &o%s&e.", ban.getPlayer().getName(), ban.getType().getPassive(), ban.getAdminName());
+            msg = format("&e&o%s&e was %s by &o%s&e.",
+                         ban.getPlayer().getName(), ban.getType().getPassive(), ban.getAdminName());
         } else if (ban.getExpiry() == null) {
-            msg = format("&e&o%s&e was %s by &o%s&e.", ban.getPlayer().getName(), ban.getType().getPassive(), ban.getAdminName());
+            msg = format("&e&o%s&e was %s by &o%s&e.",
+                         ban.getPlayer().getName(), ban.getType().getPassive(), ban.getAdminName());
             if (ban.getReason() != null) msg += Msg.format(" Reason: &o%s", ban.getReason());
         } else {
             Timespan timespan = Timespan.difference(ban.getTime(), ban.getExpiry());
-            msg = format("&e&o%s&e was %s for &o%s&e by &o%s&e.", ban.getPlayer().getName(), ban.getType().getPassive(), timespan.toNiceString(), ban.getAdminName());
+            msg = format("&e&o%s&e was %s for &o%s&e by &o%s&e.",
+                         ban.getPlayer().getName(), ban.getType().getPassive(), timespan.toNiceString(), ban.getAdminName());
             if (ban.getReason() != null) msg += Msg.format(" Reason: &o%s", ban.getReason());
         }
         plugin.getServer().getConsoleSender().sendMessage(msg);

@@ -21,7 +21,7 @@ public final class Ban implements Serializable {
     private final Date time;
     private final Date expiry;
 
-    public Ban(int id, BanType type, PlayerInfo player, PlayerInfo admin, String reason, Date time, Date expiry) {
+    public Ban(final int id, final BanType type, final PlayerInfo player, final PlayerInfo admin, final String reason, final Date time, final Date expiry) {
         this.id = id;
         this.type = type;
         this.player = player;
@@ -31,8 +31,10 @@ public final class Ban implements Serializable {
         this.expiry = expiry;
     }
 
-    public Ban(BanTable ban) {
-        this(ban.getId(), ban.getType(), new PlayerInfo(ban.getPlayer()), ban.getAdmin() == null ? null : new PlayerInfo(ban.getAdmin()), ban.getReason(), ban.getTime(), ban.getExpiry());
+    public Ban(final BanTable ban) {
+        this(ban.getId(), ban.getType(),
+             new PlayerInfo(ban.getPlayer()), ban.getAdmin() == null ? null : new PlayerInfo(ban.getAdmin()),
+             ban.getReason(), ban.getTime(), ban.getExpiry());
     }
 
     public String getAdminName() {
@@ -72,11 +74,11 @@ public final class Ban implements Serializable {
     private static void store(Map<String, Object> map, String key, Object value) {
         if (value == null) return;
         if (value instanceof UUID) {
-            map.put(key, ((UUID)value).toString());
+            map.put(key, ((UUID) value).toString());
         } else if (value instanceof PlayerInfo) {
-            map.put(key, ((PlayerInfo)value).serialize());
+            map.put(key, ((PlayerInfo) value).serialize());
         } else if (value instanceof Date) {
-            map.put(key, ((Date)value).getTime());
+            map.put(key, ((Date) value).getTime());
         } else {
             map.put(key, value);
         }
@@ -103,7 +105,7 @@ public final class Ban implements Serializable {
     static Date fetchDate(Map<String, Object> map, String key) {
         Object result = map.get(key);
         if (result instanceof Number) {
-            return new Date(((Number)result).longValue());
+            return new Date(((Number) result).longValue());
         }
         return null;
     }
@@ -112,6 +114,6 @@ public final class Ban implements Serializable {
     static PlayerInfo fetchPlayerInfo(Map<String, Object> map, String key) {
         Object o = map.get(key);
         if (o == null) return null;
-        return PlayerInfo.deserialize((Map<String, Object>)o);
+        return PlayerInfo.deserialize((Map<String, Object>) o);
     }
 }

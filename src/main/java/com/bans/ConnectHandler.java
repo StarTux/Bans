@@ -9,7 +9,7 @@ import org.bukkit.event.Listener;
 public final class ConnectHandler implements Listener {
     public final BansPlugin plugin;
 
-    public ConnectHandler(BansPlugin plugin) {
+    public ConnectHandler(final BansPlugin plugin) {
         this.plugin = plugin;
     }
 
@@ -23,7 +23,7 @@ public final class ConnectHandler implements Listener {
         Object o = event.getMessage().getPayload();
         if (!(o instanceof Map)) return;
         @SuppressWarnings("unchecked")
-        Map<String, Object> map = (Map<String, Object>)o;
+        Map<String, Object> map = (Map<String, Object>) o;
         Ban ban = Ban.deserialize(map);
         plugin.playerListener.onRemoteBan(ban);
     }
