@@ -3,6 +3,7 @@ package com.winthier.bans;
 import com.winthier.bans.command.Commands;
 import com.winthier.bans.listener.PlayerListener;
 import com.winthier.bans.sql.Database;
+import com.winthier.connect.Connect;
 import java.util.List;
 import java.util.UUID;
 import org.bukkit.Location;
@@ -43,7 +44,7 @@ public final class BansPlugin extends JavaPlugin {
     }
 
     public boolean isOnline(UUID uuid) {
-        return getServer().getPlayer(uuid) != null;
+        return Connect.getInstance().findOnlinePlayer(uuid) != null;
     }
 
     public Location getJailLocation() {
