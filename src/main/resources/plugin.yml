@@ -78,6 +78,10 @@ commands:
     description: Change a ban reason
     usage: /<command> <id> <reason>
     permission: bans.editban
+  commentban:
+    description: Comment on a ban
+    usage: /<command> <id> <message>
+    permission: bans.comment
   showban:
     description: Look up a ban by id
     usage: /<command> <id>
@@ -141,6 +145,9 @@ permissions:
   bans.editban:
     description: Use the "/editban" command
     default: op
+  bans.comment:
+    description: Use the "/commentban" command
+    default: op
   bans.showban:
     description: Use the "/showban" command
     default: op
@@ -152,6 +159,9 @@ permissions:
     default: op
   bans.override.edit:
     description: Edit ban records made by other admins
+    default: op
+  bans.override.comment:
+    description: Comment on ban records made by other admins
     default: op
   bans.banlist:
     description: Use the "/banlist" command

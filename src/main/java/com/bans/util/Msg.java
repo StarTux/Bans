@@ -4,9 +4,12 @@ import com.winthier.bans.Ban;
 import com.winthier.bans.BanType;
 import com.winthier.bans.BansPlugin;
 import com.winthier.bans.sql.BanTable;
+import com.winthier.bans.sql.MetaTable;
 import java.text.DateFormatSymbols;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -83,7 +86,7 @@ public final class Msg {
         }
     }
 
-    public static String getBanMessage(BansPlugin plugin, Ban ban) {
+    public static String getBanMessage(BansPlugin plugin, Ban ban, List<MetaTable> comments) {
         StringBuilder sb = new StringBuilder();
         sb.append(Msg.format("&cYou have been %s by &o%s&c.", ban.getType().getPassive(), ban.getAdminName()));
         if (ban.getExpiry() != null) {
@@ -107,10 +110,21 @@ public final class Msg {
         default:
             break;
         }
+        for (MetaTable meta : comments) {
+            sb.append(Msg.format("\n&cComment: &o%s", meta.getContent()));
+        }
         return sb.toString();
     }
 
+    public static String getBanMessage(BansPlugin plugin, Ban ban) {
+        return getBanMessage(plugin, ban, Collections.emptyList());
+    }
+
     public static String getBanMessage(BansPlugin plugin, BanTable ban) {
-        return getBanMessage(plugin, new Ban(ban));
+        return getBanMessage(plugin, new Ban(ban), Collections.emptyList());
+    }
+
+    public static String getBanMessage(BansPlugin plugin, BanTable ban, List<MetaTable> comments) {
+        return getBanMessage(plugin, new Ban(ban), comments);
     }
 }

@@ -24,7 +24,7 @@ public final class Database {
 
     public boolean init() {
         db = new SQLDatabase(plugin);
-        db.registerTables(BanTable.class);
+        db.registerTables(BanTable.class, MetaTable.class);
         return db.createAllTables();
     }
 
@@ -38,6 +38,7 @@ public final class Database {
     }
 
     public void deleteBan(BanTable ban) {
+        db.find(MetaTable.class).eq("ban_id", ban.getId()).delete();
         db.delete(ban);
     }
 
@@ -86,5 +87,20 @@ public final class Database {
             result.add(new Ban(entry));
         }
         return result;
+    }
+
+    public void storeMeta(MetaTable meta) {
+        db.insert(meta);
+    }
+
+    public List<MetaTable> findMeta(BanTable ban) {
+        return db.find(MetaTable.class).eq("ban_id", ban.getId()).findList();
+    }
+
+    public List<MetaTable> findComments(BanTable ban) {
+        return db.find(MetaTable.class)
+            .eq("ban_id", ban.getId())
+            .eq("type", MetaTable.MetaType.COMMENT.ordinal())
+            .findList();
     }
 }

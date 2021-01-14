@@ -5,6 +5,8 @@ import com.winthier.bans.BanType;
 import com.winthier.bans.BansPlugin;
 import com.winthier.bans.PlayerInfo;
 import com.winthier.bans.sql.BanTable;
+import com.winthier.bans.sql.MetaTable.MetaType;
+import com.winthier.bans.sql.MetaTable;
 import com.winthier.bans.util.Msg;
 import com.winthier.bans.util.Timespan;
 import com.winthier.playercache.PlayerCache;
@@ -17,6 +19,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import net.md_5.bungee.api.chat.BaseComponent;
+import net.md_5.bungee.api.chat.ClickEvent;
+import net.md_5.bungee.api.chat.ComponentBuilder;
+import net.md_5.bungee.api.chat.HoverEvent;
+import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.ChatColor;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
@@ -97,6 +104,8 @@ public final class Commands implements CommandExecutor {
             break;
         }
         plugin.database.storeBan(ban);
+        MetaTable meta = new MetaTable(ban.getId(), MetaType.CREATE, ban.getAdmin(), ban.getTime(), ban.getReason());
+        plugin.database.storeMeta(meta);
         plugin.broadcast(new Ban(ban));
     }
 
@@ -121,6 +130,8 @@ public final class Commands implements CommandExecutor {
             record.setType(newType);
             record.setExpiry(new Date());
             plugin.database.storeBan(record);
+            MetaTable meta = new MetaTable(record.getId(), MetaType.MODIFY, getSenderUuid(sender), new Date(), "Lifted");
+            plugin.database.storeMeta(meta);
             found = record;
         }
         if (failed) {
@@ -139,6 +150,12 @@ public final class Commands implements CommandExecutor {
     UUID getSenderUuid(CommandSender sender) {
         if (sender instanceof Player) return ((Player) sender).getUniqueId();
         return null;
+    }
+
+    String getSenderName(UUID uuid) {
+        if (uuid == null) return "Server";
+        String name = PlayerCache.nameForUuid(uuid);
+        return name != null ? name : "N/A";
     }
 
     public boolean issuePerm(BanType type, CommandSender sender, String[] args) {
@@ -263,9 +280,6 @@ public final class Commands implements CommandExecutor {
         sb.append(Msg.format("\n &7Type: &c%s", ban.getType().getNiceName()));
         sb.append(Msg.format("\n &7Player: &c%s", ban.getPlayerName()));
         sb.append(Msg.format("\n &7Issued by: &c%s", ban.getAdminName()));
-        if (ban.getReason() != null) {
-            sb.append(Msg.format("\n &7Reason: &c%s", ban.getReason()));
-        }
         sb.append(Msg.format("\n &7Time: &c%s", Msg.formatDate(ban.getTime())));
         if (ban.getExpiry() != null) {
             sb.append(Msg.format("\n &7Expiry: &c%s", Msg.formatDate(ban.getTime())));
@@ -276,7 +290,17 @@ public final class Commands implements CommandExecutor {
                 sb.append(Msg.format("\n &7Time left: &c%s", timeLeft.toNiceString()));
             }
         }
+        if (ban.getReason() != null) {
+            sb.append(Msg.format("\n &7Reason: &c%s", ban.getReason()));
+        }
         sender.sendMessage(sb.toString());
+        for (MetaTable meta : plugin.database.findMeta(ban)) {
+            sender.sendMessage(Msg.format("&e%s &8%s &f%s&7: %s",
+                                          meta.getType().name().toLowerCase(),
+                                          Msg.formatDate(meta.getTime()),
+                                          getSenderName(meta.getSender()),
+                                          meta.getContent()));
+        }
         return true;
     }
 
@@ -302,8 +326,37 @@ public final class Commands implements CommandExecutor {
         // Edit ban
         ban.setReason(reason);
         plugin.database.storeBan(ban);
+        MetaTable meta = new MetaTable(ban.getId(), MetaType.MODIFY, getSenderUuid(sender), new Date(), "Edit: " + reason);
+        plugin.database.storeMeta(meta);
         // Finish
         Msg.send(sender, "&eBan reason updated");
+        return true;
+    }
+
+    public boolean commentban(CommandSender sender, String[] args) {
+        if (args.length < 2) return false;
+        String idArg = args[0];
+        String comment = Msg.buildMessage(args, 1);
+        // Parse args
+        int id = -1;
+        try {
+            id = Integer.parseInt(idArg);
+        } catch (NumberFormatException nfe) {
+            throw new CommandException("Invalid ban id: " + idArg);
+        }
+        if (id < 0) throw new CommandException("Invalid ban id: " + idArg);
+        if (comment == null || comment.length() == 0) throw new CommandException("Comment required");
+        // Fetch ban
+        BanTable ban = plugin.database.getBan(id);
+        if (ban == null) throw new CommandException("Ban not found: " + id);
+        if (!ban.isOwnedBy(sender) && !sender.hasPermission("bans.override.comment")) {
+            throw new CommandException("You don't have permission comment on this ban");
+        }
+        // Edit ban
+        MetaTable meta = new MetaTable(ban.getId(), MetaType.COMMENT, getSenderUuid(sender), new Date(), comment);
+        plugin.database.storeMeta(meta);
+        // Finish
+        Msg.send(sender, "&eComment stored");
         return true;
     }
 
@@ -365,21 +418,19 @@ public final class Commands implements CommandExecutor {
         // Update
         plugin.database.updateBans(playerBans);
         // Build message
-        StringBuilder sb = new StringBuilder();
-        sb.append(Msg.format("&6[&eBan record of &6&o%s&6]", playerName));
+        sender.sendMessage(Msg.format("&6[&eBan record of &6&o%s&6]", playerName));
         if (playerBans.isEmpty()) {
-            sb.append(Msg.format("\n&e No entries found"));
-            sender.sendMessage(sb.toString());
+            sender.sendMessage(Msg.format("&e No entries found"));
             return true;
         }
         Map<BanType, Integer> count = new EnumMap<BanType, Integer>(BanType.class);
         for (BanType type : BanType.values()) count.put(type, 0);
         Collections.sort(playerBans, (o1, o2) -> o1.getTime().compareTo(o2.getTime()));
         for (BanTable ban : playerBans) {
+            StringBuilder sb = new StringBuilder();
             if (ban.getType() == BanType.NOTE) {
                 if (!sender.hasPermission("bans.note")) continue;
             }
-            sb.append("\n ");
             if (ban.getType().isActive()) {
                 sb.append(Msg.format("&4&l"));
             } else {
@@ -389,13 +440,17 @@ public final class Commands implements CommandExecutor {
             if (ban.getExpiry() != null) {
                 sb.append(Msg.format(" &8%s &f(&7%s&f)", Msg.formatDate(ban.getExpiry()), Timespan.difference(ban.getTime(), ban.getExpiry())));
             }
-            sb.append("\n ");
+            ComponentBuilder cb = new ComponentBuilder(sb.toString());
+            BaseComponent[] tooltip = TextComponent.fromLegacyText(ChatColor.YELLOW + "/showban " + ban.getId());
+            cb.event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, tooltip));
+            cb.event(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/showban " + ban.getId()));
+            sender.sendMessage(cb.create());
             String reason = ban.getReason();
             if (reason == null) reason = "N/A";
-            sb.append(Msg.format("&7&o%s&8:&f %s", ban.getAdminName(), reason));
+            sender.sendMessage(Msg.format("&7&o%s&8:&f %s", ban.getAdminName(), reason));
             count.put(ban.getType(), count.get(ban.getType()) + 1);
         }
-        sb.append("\n");
+        StringBuilder sb = new StringBuilder();
         // Statistics
         int bans = count.get(BanType.BAN) + count.get(BanType.UNBAN);
         int kicks = count.get(BanType.KICK);
@@ -463,19 +518,21 @@ public final class Commands implements CommandExecutor {
             sender.sendMessage(ChatColor.RED + "Page " + page + " is empty!");
             return;
         }
-        StringBuilder sb = new StringBuilder();
-        sb.append(ChatColor.YELLOW + "Bans list (page " + page + ")");
+        sender.sendMessage(ChatColor.YELLOW + "Bans list (page " + page + ")");
         for (BanTable ban : list) {
             if (ban.getType() == BanType.NOTE) {
                 if (!sender.hasPermission("bans.note")) continue;
             }
-            sb.append("\n");
             String banColor = Msg.format(ban.getType().isActive() ? "&4&l" : "&c");
-            sb.append(Msg.format("&e[&f%04d&e] %s%s&7 %s&r %s&8/&e%s&7 %s",
+            ComponentBuilder cb = new ComponentBuilder();
+            cb.append(Msg.format("&e[&f%04d&e] %s%s&7 %s&r %s&8/&e%s&7 %s",
                                  ban.getId(), banColor, ban.getType().getNiceName(),
                                  Msg.formatDateShort(ban.getTime()),
                                  ban.getPlayerName(), ban.getAdminName(), ban.getReason()));
+            BaseComponent[] tooltip = TextComponent.fromLegacyText(ChatColor.YELLOW + "/showban " + ban.getId());
+            cb.event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, tooltip));
+            cb.event(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/showban " + ban.getId()));
+            sender.sendMessage(cb.create());
         }
-        sender.sendMessage(sb.toString());
     }
 }

@@ -4,6 +4,7 @@ import com.winthier.bans.Ban;
 import com.winthier.bans.BanType;
 import com.winthier.bans.BansPlugin;
 import com.winthier.bans.sql.BanTable;
+import com.winthier.bans.sql.MetaTable;
 import com.winthier.bans.util.Msg;
 import java.util.Collections;
 import java.util.List;
@@ -158,6 +159,8 @@ public final class PlayerListener implements Listener {
      * When a player tried to login, check if they have an active
      * ban or warning. Update player bans if you encounter an
      * expired ban.
+     *
+     * TODO: Make this async safe!
      */
     @EventHandler
     public void onAsyncPlayerPreLogin(AsyncPlayerPreLoginEvent event) {
@@ -169,7 +172,8 @@ public final class PlayerListener implements Listener {
                 if (ban.hasExpired()) {
                     updatePlayerBansLater(event.getUniqueId());
                 } else {
-                    event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_BANNED, Msg.getBanMessage(plugin, ban));
+                    List<MetaTable> comments = plugin.database.findComments(ban);
+                    event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_BANNED, Msg.getBanMessage(plugin, ban, comments));
                 }
                 break;
             case WARNING:
