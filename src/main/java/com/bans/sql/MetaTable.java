@@ -16,7 +16,7 @@ public final class MetaTable {
     @Column(nullable = false) private MetaType type;
     @Column(nullable = true) private UUID sender; // null = plugin/console
     @Column(nullable = false) private Date time;
-    @Column(nullable = false, length = 4096) private String content;
+    @Column(nullable = true, length = 4096) private String content;
 
     public enum MetaType {
         CREATE,
