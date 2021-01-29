@@ -282,7 +282,7 @@ public final class Commands implements CommandExecutor {
         sb.append(Msg.format("\n &7Issued by: &c%s", ban.getAdminName()));
         sb.append(Msg.format("\n &7Time: &c%s", Msg.formatDate(ban.getTime())));
         if (ban.getExpiry() != null) {
-            sb.append(Msg.format("\n &7Expiry: &c%s", Msg.formatDate(ban.getTime())));
+            sb.append(Msg.format("\n &7Expiry: &c%s", Msg.formatDate(ban.getExpiry())));
             Timespan duration = Timespan.difference(ban.getTime(), ban.getExpiry());
             sb.append(Msg.format("\n &7Duration: &c%s", duration.toNiceString()));
             if (!ban.hasExpired()) {
