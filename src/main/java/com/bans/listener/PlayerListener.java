@@ -6,11 +6,13 @@ import com.winthier.bans.BansPlugin;
 import com.winthier.bans.sql.BanTable;
 import com.winthier.bans.sql.MetaTable;
 import com.winthier.bans.util.Msg;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.WeakHashMap;
+import java.util.concurrent.Semaphore;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -164,7 +166,28 @@ public final class PlayerListener implements Listener {
      */
     @EventHandler
     public void onAsyncPlayerPreLogin(AsyncPlayerPreLoginEvent event) {
-        List<BanTable> bans = plugin.database.getPlayerBans(event.getUniqueId());
+        Semaphore sem = new Semaphore(1);
+        try {
+            sem.acquire();
+        } catch (InterruptedException ie) {
+            ie.printStackTrace();
+            return;
+        }
+        List<BanTable> bans = new ArrayList<>();
+        plugin.database.getDb().scheduleAsyncTask(() -> {
+                List<BanTable> list = plugin.database.getDb()
+                    .find(BanTable.class)
+                    .eq("player", event.getUniqueId())
+                    .findList();
+                bans.addAll(list);
+                sem.release();
+            });
+        try {
+            sem.acquire();
+        } catch (InterruptedException ie) {
+            ie.printStackTrace();
+            return;
+        }
         boolean update = false;
         for (BanTable ban: bans) {
             switch (ban.getType()) {
