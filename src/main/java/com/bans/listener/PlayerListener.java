@@ -195,12 +195,6 @@ public final class PlayerListener implements Listener {
                 if (ban.hasExpired()) {
                     updatePlayerBansLater(event.getUniqueId());
                 } else {
-                    try {
-                        sem.acquire();
-                    } catch (InterruptedException ie) {
-                        ie.printStackTrace();
-                        return;
-                    }
                     List<MetaTable> comments = new ArrayList<>();
                     plugin.database.getDb().scheduleAsyncTask(() -> {
                             comments.addAll(plugin.database.findComments(ban));
