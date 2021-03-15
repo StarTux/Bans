@@ -4,6 +4,7 @@ import com.winthier.bans.Ban;
 import com.winthier.bans.BanType;
 import com.winthier.bans.BansPlugin;
 import com.winthier.bans.sql.BanTable;
+import com.winthier.bans.sql.IPBanTable;
 import com.winthier.bans.sql.MetaTable;
 import com.winthier.bans.util.Msg;
 import java.util.ArrayList;
@@ -13,6 +14,8 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.WeakHashMap;
 import java.util.concurrent.Semaphore;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -161,8 +164,6 @@ public final class PlayerListener implements Listener {
      * When a player tried to login, check if they have an active
      * ban or warning. Update player bans if you encounter an
      * expired ban.
-     *
-     * TODO: Make this async safe!
      */
     @EventHandler
     public void onAsyncPlayerPreLogin(AsyncPlayerPreLoginEvent event) {
@@ -174,12 +175,15 @@ public final class PlayerListener implements Listener {
             return;
         }
         List<BanTable> bans = new ArrayList<>();
+        List<IPBanTable> ipbans = new ArrayList<>();
+        String ip = event.getAddress().getHostAddress();
         plugin.database.getDb().scheduleAsyncTask(() -> {
                 List<BanTable> list = plugin.database.getDb()
                     .find(BanTable.class)
                     .eq("player", event.getUniqueId())
                     .findList();
                 bans.addAll(list);
+                ipbans.addAll(plugin.database.getDb().find(IPBanTable.class).eq("ip", ip).findList());
                 sem.release();
             });
         try {
@@ -207,6 +211,7 @@ public final class PlayerListener implements Listener {
                         return;
                     }
                     event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_BANNED, Msg.getBanMessage(plugin, ban, comments));
+                    return;
                 }
                 break;
             case WARNING:
@@ -215,11 +220,18 @@ public final class PlayerListener implements Listener {
                 } else {
                     liftBanLater(ban);
                     event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_OTHER, Msg.getBanMessage(plugin, ban));
+                    return;
                 }
                 break;
             default:
                 break;
             }
+        }
+        if (!ipbans.isEmpty()) {
+            IPBanTable ipban = ipbans.get(0);
+            Component message = Component.text("You have been banned by " + ipban.getAdminName()).color(NamedTextColor.RED)
+                .append(Component.text("\nReason: " + ipban.getReason()).color(NamedTextColor.RED));
+            event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_BANNED, message);
         }
     }
 

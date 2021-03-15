@@ -24,7 +24,7 @@ public final class Database {
 
     public boolean init() {
         db = new SQLDatabase(plugin);
-        db.registerTables(BanTable.class, MetaTable.class);
+        db.registerTables(BanTable.class, MetaTable.class, IPBanTable.class);
         return db.createAllTables();
     }
 

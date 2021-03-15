@@ -90,6 +90,13 @@ commands:
     description: List all bans
     usage: /banlist [page]
     permission: bans.banlist
+  ipban:
+    description: Ban an IP
+    usage: |-
+      /ipban <ip> [reason] - Ban an IP
+      /ipban lift <ip> - Lift an IP ban
+      /ipban list [page] - List IP bans
+    permission: bans.ipban
 permissions:
   bans.admin:
     description: Use the admin interface
@@ -166,3 +173,5 @@ permissions:
   bans.banlist:
     description: Use the "/banlist" command
     default: op
+  bans.ipban:
+    description: Use the /ipban command

@@ -5,6 +5,7 @@ import com.winthier.bans.BanType;
 import com.winthier.bans.BansPlugin;
 import com.winthier.bans.PlayerInfo;
 import com.winthier.bans.sql.BanTable;
+import com.winthier.bans.sql.IPBanTable;
 import com.winthier.bans.sql.MetaTable.MetaType;
 import com.winthier.bans.sql.MetaTable;
 import com.winthier.bans.util.Msg;
@@ -12,6 +13,7 @@ import com.winthier.bans.util.Timespan;
 import com.winthier.playercache.PlayerCache;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.EnumMap;
@@ -19,6 +21,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.ComponentBuilder;
@@ -533,6 +537,116 @@ public final class Commands implements CommandExecutor {
             cb.event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, tooltip));
             cb.event(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/showban " + ban.getId()));
             sender.sendMessage(cb.create());
+        }
+    }
+
+    private String parseIP(String in) {
+        if (in.contains(".")) {
+            String[] comps = in.split("\\.");
+            if (comps.length != 4) return null;
+            for (int i = 0; i < 4; i += 1) {
+                int num;
+                try {
+                    num = Integer.parseInt(comps[i]);
+                } catch (NumberFormatException nfe) {
+                    return null;
+                }
+                if (num < 0 || num > 255) return null;
+                comps[i] = "" + num;
+            }
+            return String.join(".", comps);
+        } else if (in.contains(":")) {
+            String[] comps = in.split(":");
+            if (comps.length != 8) return null;
+            for (int i = 0; i < 8; i += 1) {
+                if (comps[i].length() != 4) return null;
+                int num;
+                try {
+                    num = Integer.parseInt(comps[i], 16);
+                } catch (NumberFormatException nfe) {
+                    return null;
+                }
+                comps[i] = Integer.toHexString(num);
+            }
+            return String.join(":", comps);
+        } else {
+            return null;
+        }
+    }
+
+    public boolean ipban(CommandSender sender, String[] args) {
+        if (args.length == 0) return false;
+        switch (args[0]) {
+        case "lift": {
+            if (args.length != 2) return false;
+            String ip = parseIP(args[1]);
+            if (ip == null) {
+                sender.sendMessage(ChatColor.RED + "Invalid IP: " + args[1]);
+                return true;
+            }
+            plugin.database.getDb().find(IPBanTable.class)
+                .eq("ip", ip)
+                .deleteAsync(count -> {
+                        if (count == 0) {
+                            sender.sendMessage(Component.text("IP ban not found: " + ip).color(NamedTextColor.RED));
+                        } else {
+                            sender.sendMessage(Component.text(count + " IP ban(s) lifted: " + ip).color(NamedTextColor.YELLOW));
+                        }
+                    });
+            return true;
+        }
+        case "list": {
+            if (args.length > 2) return false;
+            final int page;
+            if (args.length >= 2) {
+                try {
+                    page = Integer.parseInt(args[1]);
+                } catch (NumberFormatException nfe) {
+                    sender.sendMessage("Invalid page: " + args[0]);
+                    return true;
+                }
+                if (page < 1) {
+                    sender.sendMessage("Invalid page: " + page);
+                    return true;
+                }
+            } else {
+                page = 1;
+            }
+            plugin.database.getDb().find(IPBanTable.class)
+                .limit(10)
+                .offset((page - 1) * 10)
+                .orderByDescending("time")
+                .findListAsync(list -> {
+                        if (list.isEmpty()) {
+                            sender.sendMessage(ChatColor.RED + "Page is empty!");
+                            return;
+                        }
+                        for (IPBanTable row : list) {
+                            Component component = Component.text("- " + row.getIp()).color(NamedTextColor.YELLOW).insertion(row.getIp())
+                                .append(Component.text(" " + row.getAdminName()).color(NamedTextColor.BLUE))
+                                .append(Component.text(" " + row.getReason()).color(NamedTextColor.WHITE));
+                            sender.sendMessage(component);
+                        }
+                    });
+            return true;
+        }
+        default: {
+            String ip = parseIP(args[0]);
+            if (ip == null) {
+                sender.sendMessage(ChatColor.RED + "Invalid IP: " + args[0]);
+                return true;
+            }
+            String reason = String.join(" ", Arrays.copyOfRange(args, 1, args.length));
+            IPBanTable row = new IPBanTable(ip, getSenderUuid(sender), reason, new Date());
+            try {
+                plugin.database.getDb().insert(row);
+            } catch (Exception e) {
+                e.printStackTrace();
+                sender.sendMessage(ChatColor.RED + "IP already banned: " + ip + " (or error, see console)");
+            }
+            sender.sendMessage(ChatColor.YELLOW + "IP banned: " + ip);
+            return true;
+        }
         }
     }
 }
