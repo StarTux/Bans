@@ -3,6 +3,7 @@ package com.winthier.bans;
 import com.winthier.bans.command.Commands;
 import com.winthier.bans.listener.PlayerListener;
 import com.winthier.bans.sql.Database;
+import com.winthier.bans.sql.IPBanTable;
 import com.winthier.connect.Connect;
 import java.util.List;
 import java.util.UUID;
@@ -41,6 +42,11 @@ public final class BansPlugin extends JavaPlugin {
     public void broadcast(Ban ban) {
         playerListener.onLocalBan(ban);
         connectHandler.broadcast(ban);
+    }
+
+    public void broadcast(IPBanTable ipban) {
+        playerListener.onIPBan(ipban);
+        connectHandler.broadcast(ipban);
     }
 
     public boolean isOnline(UUID uuid) {

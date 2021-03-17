@@ -645,6 +645,7 @@ public final class Commands implements CommandExecutor {
                 sender.sendMessage(ChatColor.RED + "IP already banned: " + ip + " (or error, see console)");
             }
             sender.sendMessage(ChatColor.YELLOW + "IP banned: " + ip);
+            plugin.broadcast(row);
             return true;
         }
         }
