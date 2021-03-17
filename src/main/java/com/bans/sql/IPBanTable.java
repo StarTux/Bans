@@ -14,7 +14,7 @@ import org.bukkit.command.CommandSender;
 @Data @Table(name = "ip_bans")
 public final class IPBanTable {
     @Id private Integer id;
-    @Column(nullable = false, length = 40) // Enough for IPv6 in the future
+    @Column(nullable = false, length = 40, unique = true) // Enough for IPv6 in the future
     private String ip;
     @Column(nullable = true)
     private UUID admin;

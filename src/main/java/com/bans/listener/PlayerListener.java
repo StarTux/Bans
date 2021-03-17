@@ -16,6 +16,7 @@ import java.util.WeakHashMap;
 import java.util.concurrent.Semaphore;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -309,6 +310,18 @@ public final class PlayerListener implements Listener {
             } else {
                 event.setCancelled(true);
                 player.sendMessage(Msg.getBanMessage(plugin, jail));
+            }
+        }
+    }
+
+    public void onIPBan(IPBanTable ipban) {
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            String ip = player.getAddress().getAddress().getHostAddress();
+            if (ip == null) continue;
+            if (ip.equals(ipban.getIp())) {
+                Component message = Component.text("You have been banned by " + ipban.getAdminName()).color(NamedTextColor.RED)
+                    .append(Component.text("\nReason: " + ipban.getReason()).color(NamedTextColor.RED));
+                player.kick(message);
             }
         }
     }
