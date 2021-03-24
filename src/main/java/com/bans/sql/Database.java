@@ -8,7 +8,9 @@ import com.winthier.sql.SQLDatabase;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import lombok.Getter;
 import org.bukkit.entity.Player;
@@ -102,5 +104,13 @@ public final class Database {
             .eq("ban_id", ban.getId())
             .eq("type", MetaTable.MetaType.COMMENT.ordinal())
             .findList();
+    }
+
+    public Set<UUID> findBannedUuids() {
+        Set<UUID> result = new HashSet<>();
+        for (BanTable row : db.find(BanTable.class).eq("type", BanType.BAN.key).findList()) {
+            result.add(row.getPlayer());
+        }
+        return result;
     }
 }

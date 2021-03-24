@@ -8,11 +8,14 @@ import com.winthier.bans.sql.BanTable;
 import com.winthier.bans.sql.IPBanTable;
 import com.winthier.bans.sql.MetaTable.MetaType;
 import com.winthier.bans.sql.MetaTable;
+import com.winthier.bans.util.Json;
 import com.winthier.bans.util.Msg;
 import com.winthier.bans.util.Timespan;
 import com.winthier.playercache.PlayerCache;
+import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -20,6 +23,7 @@ import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -481,15 +485,48 @@ public final class Commands implements CommandExecutor {
         } else if (args.length == 1 && "UpdateBans".equalsIgnoreCase(args[0])) {
             plugin.database.updateAllBans();
             sender.sendMessage("Updated all bans. See console.");
+            return true;
         } else if (args.length == 1 && "SetJail".equalsIgnoreCase(args[0])) {
             if (!(sender instanceof Player)) throw new CommandException("Player expected");
             plugin.setJailLocation(((Player) sender).getLocation());
             Msg.send(sender, "&eJail location set");
+            return true;
         } else if (args.length == 1 && "Reload".equalsIgnoreCase(args[0])) {
             plugin.reloadConfig();
             Msg.send(sender, "&eConfiguration reloaded");
+            return true;
         }
-        return true;
+        switch (args[0]) {
+        case "processwhitelist": {
+            if (args.length != 2) return false;
+            File file = new File(plugin.getDataFolder(), args[1]);
+            List<Object> list1 = (List<Object>) Json.load(file, List.class);
+            if (list1 == null) {
+                sender.sendMessage("Whitelist not found: " + args[1]);
+                return true;
+            }
+            Set<UUID> banned = plugin.database.findBannedUuids();
+            sender.sendMessage("Found " + banned.size() + " banned uuids");
+            List<Map<Object, Object>> list2 = new ArrayList<>();
+            for (Object o : list1) {
+                if (!(o instanceof Map)) continue;
+                Map<Object, Object> map = (Map<Object, Object>) o;
+                Object p = map.get("uuid");
+                if (p == null) continue;
+                UUID uuid = UUID.fromString(p.toString());
+                if (banned.contains(uuid)) {
+                    sender.sendMessage("Removing banned: " + uuid + ": " + map.get("name"));
+                    continue;
+                }
+                list2.add(map);
+            }
+            Json.save(file, list2, true);
+            sender.sendMessage("Processed " + file.getName() + ": " + list1.size() + " => " + list2.size());
+            return true;
+        }
+        default:
+            return false;
+        }
     }
 
     public boolean banlist(CommandSender sender, String[] args) {
