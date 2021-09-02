@@ -1,13 +1,18 @@
+main: com.winthier.bans.BansPlugin
 name: Bans
+
+version: 0.1
+api-version: 1.17
+
 description: Ban management for Cavetale
 author: StarTux
-version: 0.1
 website: https://cavetale.com
-api-version: 1.13
-main: com.winthier.bans.BansPlugin
+
 depend: [ SQL ]
 softdepend: [ Connect, Chat ]
+
 commands:
+
   bans:
     description: Admin interface
     usage: |-
@@ -97,7 +102,9 @@ commands:
       /ipban lift <ip> - Lift an IP ban
       /ipban list [page] - List IP bans
     permission: bans.ipban
+
 permissions:
+
   bans.admin:
     description: Use the admin interface
     default: op

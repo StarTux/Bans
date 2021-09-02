@@ -1,16 +1,14 @@
 package com.winthier.bans;
 
-import com.google.gson.Gson;
 import com.winthier.bans.sql.IPBanTable;
+import com.winthier.bans.util.Json;
 import com.winthier.connect.Connect;
 import com.winthier.connect.event.ConnectMessageEvent;
-import java.util.Map;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 
 public final class ConnectHandler implements Listener {
     public final BansPlugin plugin;
-    public static final Gson GSON = new Gson();
 
     public ConnectHandler(final BansPlugin plugin) {
         this.plugin = plugin;
@@ -24,16 +22,12 @@ public final class ConnectHandler implements Listener {
     public void onConnectMessage(ConnectMessageEvent event) {
         switch (event.getMessage().getChannel()) {
         case "Bans": {
-            Object o = event.getMessage().getPayload();
-            if (!(o instanceof Map)) return;
-            @SuppressWarnings("unchecked")
-            Map<String, Object> map = (Map<String, Object>) o;
-            Ban ban = Ban.deserialize(map);
+            Ban ban = Json.deserialize(event.getMessage().getPayload(), Ban.class);
             plugin.playerListener.onRemoteBan(ban);
             break;
         }
         case "Bans.IPBan": {
-            IPBanTable ipban = GSON.fromJson(event.getMessage().getPayload().toString(), IPBanTable.class);
+            IPBanTable ipban = Json.deserialize(event.getMessage().getPayload(), IPBanTable.class);
             if (ipban != null) {
                 plugin.playerListener.onIPBan(ipban);
             }
@@ -44,10 +38,10 @@ public final class ConnectHandler implements Listener {
     }
 
     public void broadcast(Ban ban) {
-        Connect.getInstance().broadcast("Bans", ban.serialize());
+        Connect.getInstance().broadcast("Bans", Json.serialize(ban));
     }
 
     public void broadcast(IPBanTable ipban) {
-        Connect.getInstance().broadcast("Bans.IPBan", GSON.toJson(ipban));
+        Connect.getInstance().broadcast("Bans.IPBan", Json.serialize(ipban));
     }
 }

@@ -500,6 +500,7 @@ public final class Commands implements CommandExecutor {
         case "processwhitelist": {
             if (args.length != 2) return false;
             File file = new File(plugin.getDataFolder(), args[1]);
+            @SuppressWarnings("unchecked")
             List<Object> list1 = (List<Object>) Json.load(file, List.class);
             if (list1 == null) {
                 sender.sendMessage("Whitelist not found: " + args[1]);
@@ -510,6 +511,7 @@ public final class Commands implements CommandExecutor {
             List<Map<Object, Object>> list2 = new ArrayList<>();
             for (Object o : list1) {
                 if (!(o instanceof Map)) continue;
+                @SuppressWarnings("unchecked")
                 Map<Object, Object> map = (Map<Object, Object>) o;
                 Object p = map.get("uuid");
                 if (p == null) continue;
