@@ -42,11 +42,13 @@ public final class BansPlugin extends JavaPlugin {
     public void broadcast(Ban ban) {
         playerListener.onLocalBan(ban);
         connectHandler.broadcast(ban);
+        Webhook.send(this, ban);
     }
 
     public void broadcast(IPBanTable ipban) {
         playerListener.onIPBan(ipban);
         connectHandler.broadcast(ipban);
+        Webhook.send(this, ipban);
     }
 
     public boolean isOnline(UUID uuid) {
