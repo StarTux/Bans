@@ -54,7 +54,11 @@ public final class Timespan {
     }
 
     public static Timespan difference(Date a, Date b) {
-        long diff = b.getTime() - a.getTime();
+        return difference(a.getTime(), b.getTime());
+    }
+
+    public static Timespan difference(long a, long b) {
+        long diff = b - a;
         long minutes = (diff - 1) / 1000 / 60 + 1;
         if (minutes <= 0) return new Timespan(0, TimeUnit.MINUTE);
         if (minutes <= 60) return new Timespan(minutes, TimeUnit.MINUTE);

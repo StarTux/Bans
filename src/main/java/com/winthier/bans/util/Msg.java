@@ -27,6 +27,10 @@ public final class Msg {
         sender.sendMessage(format(msg, args));
     }
 
+    public static String formatDate(long time) {
+        return formatDate(new Date(time));
+    }
+
     public static String formatDate(Date date) {
         Calendar cal = Calendar.getInstance();
         cal.setTime(date);
@@ -68,7 +72,7 @@ public final class Msg {
         if (ban.getType().isLifted()) {
             msg = format("&e&o%s&e was %s by &o%s&e.",
                          ban.getPlayer().getName(), ban.getType().getPassive(), ban.getAdminName());
-        } else if (ban.getExpiry() == null) {
+        } else if (ban.getExpiry() == 0L) {
             msg = format("&e&o%s&e was %s by &o%s&e.",
                          ban.getPlayer().getName(), ban.getType().getPassive(), ban.getAdminName());
             if (ban.getReason() != null) msg += Msg.format(" Reason: &o%s", ban.getReason());
@@ -89,11 +93,11 @@ public final class Msg {
     public static String getBanMessage(BansPlugin plugin, Ban ban, List<MetaTable> comments) {
         StringBuilder sb = new StringBuilder();
         sb.append(Msg.format("&cYou have been %s by &o%s&c.", ban.getType().getPassive(), ban.getAdminName()));
-        if (ban.getExpiry() != null) {
-            Date expiry = ban.getExpiry();
-            Date now = new Date();
+        if (ban.getExpiry() != 0L) {
+            long now = System.currentTimeMillis();
+            long expiry = ban.getExpiry();
             Timespan timespan = Timespan.difference(now, expiry);
-            if (now.compareTo(expiry) < 0) {
+            if (now < expiry) {
                 sb.append(Msg.format("\n&cExpiry: &o%s&c (&o%s&c left)", Msg.formatDate(expiry), timespan.toNiceString()));
             }
         }

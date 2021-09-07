@@ -21,7 +21,7 @@ final class Webhook {
     protected static void send(final BansPlugin plugin, Ban ban) {
         if (ban.getType() == BanType.NOTE) return;
         String message;
-        if (!ban.getType().isLifted() && ban.getExpiry() != null) {
+        if (!ban.getType().isLifted() && ban.getExpiry() != 0L) {
             message = ""
                 + "`" + ban.getId() + "`"
                 + " " + ban.getPlayer().getName() + " was " + ban.getType().getPassive() + " by " + ban.getAdminName()

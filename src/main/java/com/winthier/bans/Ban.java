@@ -15,8 +15,8 @@ public final class Ban implements Serializable {
     private final PlayerInfo player;
     private final PlayerInfo admin;
     private final String reason;
-    private final Date time;
-    private final Date expiry;
+    private final long time;
+    private final long expiry;
 
     public Ban(final int id, final BanType type, final PlayerInfo player, final PlayerInfo admin, final String reason, final Date time, final Date expiry) {
         this.id = id;
@@ -24,8 +24,8 @@ public final class Ban implements Serializable {
         this.player = player;
         this.admin = admin;
         this.reason = reason;
-        this.time = time;
-        this.expiry = expiry;
+        this.time = time.getTime();
+        this.expiry = expiry.getTime();
     }
 
     public Ban(final BanTable ban) {
@@ -39,7 +39,7 @@ public final class Ban implements Serializable {
     }
 
     public boolean hasExpired() {
-        if (expiry == null) return false;
-        return expiry.compareTo(new Date()) <= 0;
+        if (expiry == 0L) return false;
+        return System.currentTimeMillis() >= expiry;
     }
 }
