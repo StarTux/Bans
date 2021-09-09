@@ -25,7 +25,7 @@ public final class Ban implements Serializable {
         this.admin = admin;
         this.reason = reason;
         this.time = time.getTime();
-        this.expiry = expiry.getTime();
+        this.expiry = expiry != null ? expiry.getTime() : 0L;
     }
 
     public Ban(final BanTable ban) {
