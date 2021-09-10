@@ -24,14 +24,14 @@ final class Webhook {
         if (!ban.getType().isLifted() && ban.getExpiry() != 0L) {
             message = ""
                 + "`" + ban.getId() + "`"
-                + " " + ban.getPlayer().getName() + " was " + ban.getType().getPassive() + " by " + ban.getAdminName()
+                + " " + bold(ban.getPlayer().getName()) + " was " + ban.getType().getPassive() + " by " + ban.getAdminName()
                 + " for " + Timespan.difference(ban.getTime(), ban.getExpiry()).toNiceString()
                 + ": " + (ban.getReason() != null ? sanitize(ban.getReason()) : "N/A");
         } else {
             message = ""
                 + "`" + ban.getId() + "`"
-                + " " + ban.getPlayer().getName() + " was " + ban.getType().getPassive() + " by " + ban.getAdminName()
-                + (ban.getReason() != null ? sanitize(ban.getReason()) : "");
+                + " " + bold(ban.getPlayer().getName()) + " was " + ban.getType().getPassive() + " by " + ban.getAdminName()
+                + (ban.getReason() != null ? ": " + sanitize(ban.getReason()) : "");
         }
         send(plugin, message);
     }
@@ -70,6 +70,10 @@ final class Webhook {
             plugin.getLogger().log(Level.SEVERE, "Webhook url=" + url + " body=" + body, e);
             e.printStackTrace();
         }
+    }
+
+    private static String bold(String in) {
+        return "**" + in + "**";
     }
 
     private static String sanitize(String in) {
