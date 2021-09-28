@@ -44,14 +44,14 @@ final class Webhook {
     }
 
     protected static void send(final BansPlugin plugin, final String body) {
-        plugin.database.getDb().find(SQLWebhook.class).findListAsync(rows -> {
-                for (SQLWebhook row : rows) {
-                    send(plugin, row.getUrl(), body);
+        plugin.database.getDb().scheduleAsyncTask(() -> {
+                for (SQLWebhook row : plugin.database.getDb().find(SQLWebhook.class).findList()) {
+                    sendRequest(plugin, row.getUrl(), body);
                 }
             });
     }
 
-    protected static void send(final BansPlugin plugin, final String url, final String message) {
+    protected static void sendRequest(final BansPlugin plugin, final String url, final String message) {
         Map<String, Object> webhookObject = new LinkedHashMap<>();
         webhookObject.put("content", message);
         final String body = Json.serialize(webhookObject);
