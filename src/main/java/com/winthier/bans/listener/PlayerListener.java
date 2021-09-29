@@ -7,6 +7,7 @@ import com.winthier.bans.sql.BanTable;
 import com.winthier.bans.sql.IPBanTable;
 import com.winthier.bans.sql.MetaTable;
 import com.winthier.bans.util.Msg;
+import com.winthier.chat.event.ChatPlayerTalkEvent;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -21,7 +22,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
@@ -31,7 +31,6 @@ import org.bukkit.scheduler.BukkitRunnable;
 public final class PlayerListener implements Listener {
     public final BansPlugin plugin;
     private final Map<UUID, BanInfo> players = Collections.<UUID, BanInfo>synchronizedMap(new WeakHashMap<UUID, BanInfo>());
-    private ChatListener chatListener = null;
 
     public PlayerListener(final BansPlugin plugin) {
         this.plugin = plugin;
@@ -42,11 +41,6 @@ public final class PlayerListener implements Listener {
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
         for (Player player : plugin.getServer().getOnlinePlayers()) {
             updateBanInfo(player);
-        }
-        if (plugin.getServer().getPluginManager().getPlugin("Chat") != null) {
-            chatListener = new ChatListener(this);
-            plugin.getServer().getPluginManager().registerEvents(chatListener, plugin);
-            plugin.getLogger().info("Chat plugin found!");
         }
     }
 
@@ -70,7 +64,7 @@ public final class PlayerListener implements Listener {
             // Issue immediate actions
             switch (ban.getType()) {
             case BAN: case KICK:
-                player.kickPlayer(Msg.getBanMessage(plugin, ban));
+                player.kick(Msg.getBanComponent(plugin, ban, List.of()));
                 break;
             case WARNING:
                 // Update the ban type since the warning has been delivered.
@@ -79,16 +73,16 @@ public final class PlayerListener implements Listener {
                     table.lift();
                     plugin.database.storeBan(table);
                 }
-                player.sendMessage(Msg.getBanMessage(plugin, ban));
+                player.sendMessage(Msg.getBanComponent(plugin, ban, List.of()));
                 break;
             case JAIL:
                 // Notify player, send to jail.
                 player.teleport(plugin.getJailLocation());
-                player.sendMessage(Msg.getBanMessage(plugin, ban));
+                player.sendMessage(Msg.getBanComponent(plugin, ban, List.of()));
                 break;
             case MUTE:
                 // Notify player
-                player.sendMessage(Msg.getBanMessage(plugin, ban));
+                player.sendMessage(Msg.getBanComponent(plugin, ban, List.of()));
                 break;
             case UNJAIL: case UNMUTE:
                 Msg.send(player, "&cYou have been %s by &o%s&c.", ban.getType().getPassive(), ban.getAdminName());
@@ -211,7 +205,7 @@ public final class PlayerListener implements Listener {
                         ie.printStackTrace();
                         return;
                     }
-                    event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_BANNED, Msg.getBanMessage(plugin, ban, comments));
+                    event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_BANNED, Msg.getBanComponent(plugin, ban, comments));
                     return;
                 }
                 break;
@@ -220,7 +214,7 @@ public final class PlayerListener implements Listener {
                     updatePlayerBansLater(event.getUniqueId());
                 } else {
                     liftBanLater(ban);
-                    event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_OTHER, Msg.getBanMessage(plugin, ban));
+                    event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_OTHER, Msg.getBanComponent(plugin, ban, List.of()));
                     return;
                 }
                 break;
@@ -251,47 +245,28 @@ public final class PlayerListener implements Listener {
         players.remove(event.getPlayer().getUniqueId());
     }
 
-    /**
-     * When someone tries to chat while muted or jailed, deny them
-     * that. If either expires, update bans.
-     */
-    @EventHandler(priority = EventPriority.LOW)
-    public void onAsyncPlayerChat(AsyncPlayerChatEvent event) {
+    @EventHandler
+    public void onChatPlayerTalk(ChatPlayerTalkEvent event) {
         final Player player = event.getPlayer();
         BanInfo info = getBanInfo(player);
         if (info == null) return; // Should never happen
         Ban mute = info.getMute();
         Ban jail = info.getJail();
-        boolean scheduled = false;
         if (mute != null) {
             if (mute.hasExpired()) {
-                if (!scheduled) {
-                    new BukkitRunnable() {
-                        @Override public void run() {
-                            updatePlayerBans(player);
-                        }
-                    }.runTask(plugin);
-                    scheduled = true;
-                }
+                updatePlayerBans(player);
             } else {
                 event.setCancelled(true);
-                player.sendMessage(Msg.getBanMessage(plugin, mute));
+                player.sendMessage(Msg.getBanComponent(plugin, mute, List.of()));
                 return;
             }
         }
         if (jail != null) {
             if (jail.hasExpired()) {
-                if (!scheduled) {
-                    new BukkitRunnable() {
-                        @Override public void run() {
-                            updatePlayerBans(player);
-                        }
-                    }.runTask(plugin);
-                    scheduled = true;
-                }
+                updatePlayerBans(player);
             } else {
                 event.setCancelled(true);
-                player.sendMessage(Msg.getBanMessage(plugin, jail));
+                player.sendMessage(Msg.getBanComponent(plugin, jail, List.of()));
                 return;
             }
         }
@@ -309,7 +284,7 @@ public final class PlayerListener implements Listener {
                 updatePlayerBans(player);
             } else {
                 event.setCancelled(true);
-                player.sendMessage(Msg.getBanMessage(plugin, jail));
+                player.sendMessage(Msg.getBanComponent(plugin, jail, List.of()));
             }
         }
     }

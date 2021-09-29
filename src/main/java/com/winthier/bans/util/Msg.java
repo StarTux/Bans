@@ -7,9 +7,14 @@ import com.winthier.bans.sql.BanTable;
 import com.winthier.bans.sql.MetaTable;
 import java.text.DateFormatSymbols;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.TextComponent;
+import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.event.HoverEvent;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -90,45 +95,44 @@ public final class Msg {
         }
     }
 
-    public static String getBanMessage(BansPlugin plugin, Ban ban, List<MetaTable> comments) {
-        StringBuilder sb = new StringBuilder();
-        sb.append(Msg.format("&cYou have been %s by &o%s&c.", ban.getType().getPassive(), ban.getAdminName()));
+    public static Component getBanComponent(BansPlugin plugin, Ban ban, List<MetaTable> comments) {
+        TextComponent.Builder result = Component.text().color(NamedTextColor.RED)
+            .append(Component.text("You have been " + ban.getType().getPassive() + " by "))
+            .append(Component.text(ban.getAdminName(), null, TextDecoration.ITALIC))
+            .append(Component.text("."));
         if (ban.getExpiry() != 0L) {
             long now = System.currentTimeMillis();
             long expiry = ban.getExpiry();
             Timespan timespan = Timespan.difference(now, expiry);
             if (now < expiry) {
-                sb.append(Msg.format("\n&cExpiry: &o%s&c (&o%s&c left)", Msg.formatDate(expiry), timespan.toNiceString()));
+                result.append(Component.text("Expiry: "))
+                    .append(Component.text(formatDate(expiry), null, TextDecoration.ITALIC))
+                    .append(Component.text(" ("))
+                    .append(Component.text(timespan.toNiceString(), null, TextDecoration.ITALIC))
+                    .append(Component.text(" left)"));
             }
         }
         if (ban.getReason() != null) {
-            sb.append(Msg.format("\n&cReason: &o%s", ban.getReason()));
+            result.append(Component.text("\nReason: "))
+                .append(Component.text(ban.getReason(), null, TextDecoration.ITALIC));
         }
         switch (ban.getType()) {
         case BAN:
-            sb.append("\n");
-            String appealMsg = plugin.getConfig().getString("AppealMessage");
-            sb.append(Msg.format(appealMsg));
-            //sb.append(Msg.format("\n&cAppeal at &9&nhttp://www.winthier.com/appeal"));
+            result.append(Component.text("\nAppeal at "))
+                .append(Component.text("cavetale.com/ban-appeal", null, TextDecoration.UNDERLINED)
+                        .hoverEvent(HoverEvent.showText(Component.text("cavetale.com/ban-appeal", NamedTextColor.RED, TextDecoration.UNDERLINED)))
+                        .clickEvent(ClickEvent.openUrl("https://cavetale.com/ban-appeal")));
             break;
-        default:
-            break;
+        default: break;
         }
         for (MetaTable meta : comments) {
-            sb.append(Msg.format("\n&cComment: &o%s", meta.getContent()));
+            result.append(Component.text("\nComment: "))
+                .append(Component.text(meta.getContent(), null, TextDecoration.ITALIC));
         }
-        return sb.toString();
+        return result.build();
     }
 
-    public static String getBanMessage(BansPlugin plugin, Ban ban) {
-        return getBanMessage(plugin, ban, Collections.emptyList());
-    }
-
-    public static String getBanMessage(BansPlugin plugin, BanTable ban) {
-        return getBanMessage(plugin, new Ban(ban), Collections.emptyList());
-    }
-
-    public static String getBanMessage(BansPlugin plugin, BanTable ban, List<MetaTable> comments) {
-        return getBanMessage(plugin, new Ban(ban), comments);
+    public static Component getBanComponent(BansPlugin plugin, BanTable ban, List<MetaTable> comments) {
+        return getBanComponent(plugin, new Ban(ban), comments);
     }
 }

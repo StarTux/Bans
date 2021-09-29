@@ -8,8 +8,8 @@ description: Ban management for Cavetale
 author: StarTux
 website: https://cavetale.com
 
-depend: [ SQL ]
-softdepend: [ Connect, Chat ]
+depend: [SQL, Chat]
+softdepend: [Connect]
 
 commands:
 
