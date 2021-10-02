@@ -24,13 +24,13 @@ final class Webhook {
         if (!ban.getType().isLifted() && ban.getExpiry() != 0L) {
             message = ""
                 + "`" + ban.getId() + "`"
-                + " " + bold(ban.getPlayer().getName()) + " was " + ban.getType().getPassive() + " by " + ban.getAdminName()
+                + " " + bold(sanitize(ban.getPlayer().getName())) + " was " + ban.getType().getPassive() + " by " + ban.getAdminName()
                 + " for " + Timespan.difference(ban.getTime(), ban.getExpiry()).toNiceString()
                 + ": " + (ban.getReason() != null ? sanitize(ban.getReason()) : "N/A");
         } else {
             message = ""
                 + "`" + ban.getId() + "`"
-                + " " + bold(ban.getPlayer().getName()) + " was " + ban.getType().getPassive() + " by " + ban.getAdminName()
+                + " " + bold(sanitize(ban.getPlayer().getName())) + " was " + ban.getType().getPassive() + " by " + ban.getAdminName()
                 + (ban.getReason() != null ? ": " + sanitize(ban.getReason()) : "");
         }
         send(plugin, message);
