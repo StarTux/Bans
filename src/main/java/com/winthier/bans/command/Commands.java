@@ -26,12 +26,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
-import net.md_5.bungee.api.chat.BaseComponent;
-import net.md_5.bungee.api.chat.ClickEvent;
-import net.md_5.bungee.api.chat.ComponentBuilder;
-import net.md_5.bungee.api.chat.HoverEvent;
-import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.ChatColor;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
@@ -448,11 +445,10 @@ public final class Commands implements CommandExecutor {
             if (ban.getExpiry() != null) {
                 sb.append(Msg.format(" &8%s &f(&7%s&f)", Msg.formatDate(ban.getExpiry()), Timespan.difference(ban.getTime(), ban.getExpiry())));
             }
-            ComponentBuilder cb = new ComponentBuilder(sb.toString());
-            BaseComponent[] tooltip = TextComponent.fromLegacyText(ChatColor.YELLOW + "/showban " + ban.getId());
-            cb.event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, tooltip));
-            cb.event(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/showban " + ban.getId()));
-            sender.sendMessage(cb.create());
+            Component tooltip = Component.text("/showban " + ban.getId(), NamedTextColor.YELLOW);
+            sender.sendMessage(Component.text(sb.toString())
+                               .hoverEvent(HoverEvent.showText(tooltip))
+                               .clickEvent(ClickEvent.suggestCommand("/showban " + ban.getId())));
             String reason = ban.getReason();
             if (reason == null) reason = "N/A";
             sender.sendMessage(Msg.format("&7&o%s&8:&f %s", ban.getAdminName(), reason));
@@ -567,15 +563,13 @@ public final class Commands implements CommandExecutor {
                 if (!sender.hasPermission("bans.note")) continue;
             }
             String banColor = Msg.format(ban.getType().isActive() ? "&4&l" : "&c");
-            ComponentBuilder cb = new ComponentBuilder();
-            cb.append(Msg.format("&e[&f%04d&e] %s%s&7 %s&r %s&8/&e%s&7 %s",
-                                 ban.getId(), banColor, ban.getType().getNiceName(),
-                                 Msg.formatDateShort(ban.getTime()),
-                                 ban.getPlayerName(), ban.getAdminName(), ban.getReason()));
-            BaseComponent[] tooltip = TextComponent.fromLegacyText(ChatColor.YELLOW + "/showban " + ban.getId());
-            cb.event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, tooltip));
-            cb.event(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/showban " + ban.getId()));
-            sender.sendMessage(cb.create());
+            sender.sendMessage(Component.text(Msg.format("&e[&f%04d&e] %s%s&7 %s&r %s&8/&e%s&7 %s",
+                                                         ban.getId(), banColor, ban.getType().getNiceName(),
+                                                         Msg.formatDateShort(ban.getTime()),
+                                                         ban.getPlayerName(), ban.getAdminName(), ban.getReason()))
+                               .hoverEvent(HoverEvent.showText(Component.text("/showban " + ban.getId(),
+                                                                              NamedTextColor.YELLOW)))
+                               .clickEvent(ClickEvent.suggestCommand("/showban " + ban.getId())));
         }
     }
 
