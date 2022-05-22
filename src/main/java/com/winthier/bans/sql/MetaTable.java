@@ -1,5 +1,6 @@
 package com.winthier.bans.sql;
 
+import com.winthier.sql.SQLRow;
 import java.util.Date;
 import java.util.UUID;
 import javax.persistence.Column;
@@ -10,7 +11,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Getter @Setter @Table(name = "meta", indexes = @Index(columnList = "ban_id"))
-public final class MetaTable {
+public final class MetaTable implements SQLRow {
     @Id private Integer id;
     @Column(nullable = false) private int banId;
     @Column(nullable = false) private MetaType type;

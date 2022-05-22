@@ -1,6 +1,7 @@
 package com.winthier.bans.sql;
 
 import com.winthier.playercache.PlayerCache;
+import com.winthier.sql.SQLRow;
 import java.util.Date;
 import java.util.UUID;
 import javax.persistence.Column;
@@ -12,7 +13,7 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
 
 @Data @Table(name = "ip_bans")
-public final class IPBanTable {
+public final class IPBanTable implements SQLRow {
     @Id private Integer id;
     @Column(nullable = false, length = 40, unique = true) // Enough for IPv6 in the future
     private String ip;

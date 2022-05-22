@@ -2,6 +2,7 @@ package com.winthier.bans.sql;
 
 import com.winthier.bans.BanType;
 import com.winthier.playercache.PlayerCache;
+import com.winthier.sql.SQLRow;
 import java.util.Date;
 import java.util.UUID;
 import javax.persistence.Column;
@@ -17,7 +18,7 @@ import org.bukkit.command.CommandSender;
 @Getter @Setter
 @Table(name = "bans",
        indexes = @Index(columnList = "player"))
-public final class BanTable {
+public final class BanTable implements SQLRow {
     @Id private Integer id;
     @Column(nullable = false) private UUID player;
     @Column(nullable = true) private UUID admin;
