@@ -26,7 +26,7 @@ public final class Database {
 
     public boolean init() {
         db = new SQLDatabase(plugin);
-        db.registerTables(BanTable.class, MetaTable.class, IPBanTable.class, SQLWebhook.class);
+        db.registerTables(List.of(BanTable.class, MetaTable.class, IPBanTable.class, SQLWebhook.class));
         return db.createAllTables();
     }
 
