@@ -4,6 +4,7 @@ import com.winthier.bans.command.Commands;
 import com.winthier.bans.listener.PlayerListener;
 import com.winthier.bans.sql.Database;
 import com.winthier.bans.sql.IPBanTable;
+import com.winthier.bans.sql.MetaTable;
 import com.winthier.connect.Connect;
 import java.util.List;
 import java.util.UUID;
@@ -43,6 +44,10 @@ public final class BansPlugin extends JavaPlugin {
         playerListener.onLocalBan(ban);
         connectHandler.broadcast(ban);
         Webhook.send(this, ban);
+    }
+
+    public void broadcast(MetaTable meta) {
+        Webhook.send(this, meta);
     }
 
     public void broadcast(IPBanTable ipban) {

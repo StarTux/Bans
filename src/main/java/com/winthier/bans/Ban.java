@@ -1,5 +1,6 @@
 package com.winthier.bans;
 
+import com.cavetale.core.playercache.PlayerCache;
 import com.winthier.bans.sql.BanTable;
 import java.io.Serializable;
 import java.util.Date;
@@ -12,13 +13,13 @@ import lombok.Getter;
 public final class Ban implements Serializable {
     private final int id;
     private final BanType type;
-    private final PlayerInfo player;
-    private final PlayerInfo admin;
+    private final PlayerCache player;
+    private final PlayerCache admin;
     private final String reason;
     private final long time;
     private final long expiry;
 
-    public Ban(final int id, final BanType type, final PlayerInfo player, final PlayerInfo admin, final String reason, final Date time, final Date expiry) {
+    public Ban(final int id, final BanType type, final PlayerCache player, final PlayerCache admin, final String reason, final Date time, final Date expiry) {
         this.id = id;
         this.type = type;
         this.player = player;
@@ -30,7 +31,10 @@ public final class Ban implements Serializable {
 
     public Ban(final BanTable ban) {
         this(ban.getId(), ban.getType(),
-             new PlayerInfo(ban.getPlayer()), ban.getAdmin() == null ? null : new PlayerInfo(ban.getAdmin()),
+             PlayerCache.forUuid(ban.getPlayer()),
+             (ban.getAdmin() == null
+              ? null
+              : PlayerCache.forUuid(ban.getAdmin())),
              ban.getReason(), ban.getTime(), ban.getExpiry());
     }
 

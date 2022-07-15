@@ -1,7 +1,7 @@
 package com.winthier.bans.sql;
 
+import com.cavetale.core.playercache.PlayerCache;
 import com.winthier.bans.BanType;
-import com.winthier.playercache.PlayerCache;
 import com.winthier.sql.SQLRow;
 import java.util.Date;
 import java.util.UUID;

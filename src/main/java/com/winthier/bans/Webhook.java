@@ -1,6 +1,7 @@
 package com.winthier.bans;
 
 import com.winthier.bans.sql.IPBanTable;
+import com.winthier.bans.sql.MetaTable;
 import com.winthier.bans.sql.SQLWebhook;
 import com.winthier.bans.util.Json;
 import com.winthier.bans.util.Timespan;
@@ -33,6 +34,15 @@ final class Webhook {
                 + " " + bold(sanitize(ban.getPlayer().getName())) + " was " + ban.getType().getPassive() + " by " + ban.getAdminName()
                 + (ban.getReason() != null ? ": " + sanitize(ban.getReason()) : "");
         }
+        send(plugin, message);
+    }
+
+    protected static void send(final BansPlugin plugin, MetaTable meta) {
+        String message = ""
+            + backtick("" + meta.getBanId())
+            + " " + bold(sanitize(meta.getSenderName()))
+            + " " + meta.getType().passive
+            + ": " + sanitize(meta.getContent());
         send(plugin, message);
     }
 
@@ -74,6 +84,10 @@ final class Webhook {
 
     private static String bold(String in) {
         return "**" + in + "**";
+    }
+
+    private static String backtick(String in) {
+        return "`" + in + "`";
     }
 
     private static String sanitize(String in) {

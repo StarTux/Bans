@@ -1,9 +1,9 @@
 package com.winthier.bans.command;
 
+import com.cavetale.core.playercache.PlayerCache;
 import com.winthier.bans.Ban;
 import com.winthier.bans.BanType;
 import com.winthier.bans.BansPlugin;
-import com.winthier.bans.PlayerInfo;
 import com.winthier.bans.sql.BanTable;
 import com.winthier.bans.sql.IPBanTable;
 import com.winthier.bans.sql.MetaTable.MetaType;
@@ -11,7 +11,6 @@ import com.winthier.bans.sql.MetaTable;
 import com.winthier.bans.util.Json;
 import com.winthier.bans.util.Msg;
 import com.winthier.bans.util.Timespan;
-import com.winthier.playercache.PlayerCache;
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -33,12 +32,12 @@ import org.bukkit.ChatColor;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandException;
-import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.PluginCommand;
+import org.bukkit.command.TabExecutor;
 import org.bukkit.entity.Player;
 
-public final class Commands implements CommandExecutor {
+public final class Commands implements TabExecutor {
     public final BansPlugin plugin;
     private final Map<PluginCommand, Method> commandMap = new HashMap<PluginCommand, Method>();
 
@@ -86,6 +85,11 @@ public final class Commands implements CommandExecutor {
             }
         }
         return true;
+    }
+
+    @Override
+    public List<String> onTabComplete(CommandSender sender, Command command, String label, String[] args) {
+        return PlayerCache.completeNames(args[args.length - 1]);
     }
 
     private void storeBan(CommandSender sender, BanTable ban) {
@@ -146,8 +150,10 @@ public final class Commands implements CommandExecutor {
         }
         if (found == null) throw new CommandException(Msg.format("%s is not %s.", getPlayerName(player), type.getPassive()));
         // Set the admin to whoever lifted the ban for the announcement.
-        Ban ban = new Ban(found.getId(), found.getType(), new PlayerInfo(found.getPlayer()),
-                          (sender instanceof OfflinePlayer ? new PlayerInfo((OfflinePlayer) sender) : null),
+        Ban ban = new Ban(found.getId(), found.getType(), PlayerCache.forUuid(found.getPlayer()),
+                          (sender instanceof OfflinePlayer
+                           ? PlayerCache.of((OfflinePlayer) sender)
+                           : null),
                           null, found.getTime(), found.getExpiry());
         plugin.broadcast(ban);
     }
@@ -361,6 +367,7 @@ public final class Commands implements CommandExecutor {
         MetaTable meta = new MetaTable(ban.getId(), MetaType.COMMENT, getSenderUuid(sender), new Date(), comment);
         plugin.database.storeMeta(meta);
         // Finish
+        plugin.broadcast(meta);
         Msg.send(sender, "&eComment stored");
         return true;
     }

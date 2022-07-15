@@ -1,5 +1,6 @@
 package com.winthier.bans.sql;
 
+import com.cavetale.core.playercache.PlayerCache;
 import com.winthier.sql.SQLRow;
 import java.util.Date;
 import java.util.UUID;
@@ -8,6 +9,7 @@ import javax.persistence.Id;
 import javax.persistence.Index;
 import javax.persistence.Table;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
 @Getter @Setter @Table(name = "meta", indexes = @Index(columnList = "ban_id"))
@@ -19,10 +21,12 @@ public final class MetaTable implements SQLRow {
     @Column(nullable = false) private Date time;
     @Column(nullable = true, length = 4096) private String content;
 
+    @RequiredArgsConstructor
     public enum MetaType {
-        CREATE,
-        MODIFY,
-        COMMENT;
+        CREATE("created"),
+        MODIFY("modified"),
+        COMMENT("commented");
+        public final String passive;
     }
 
     public MetaTable() { }
@@ -33,5 +37,11 @@ public final class MetaTable implements SQLRow {
         this.sender = sender;
         this.time = time;
         this.content = content;
+    }
+
+    public String getSenderName() {
+        return sender != null
+            ? PlayerCache.nameForUuid(sender)
+            : "Console";
     }
 }
