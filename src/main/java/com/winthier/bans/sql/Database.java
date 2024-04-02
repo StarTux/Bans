@@ -5,6 +5,7 @@ import com.winthier.bans.BanType;
 import com.winthier.bans.BansPlugin;
 import com.winthier.bans.util.Msg;
 import com.winthier.sql.SQLDatabase;
+import com.winthier.sql.SQLRow;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -24,9 +25,17 @@ public final class Database {
         this.plugin = plugin;
     }
 
+    public static List<Class<? extends SQLRow>> getDatabaseClasses() {
+        return List.of(BanTable.class,
+                       MetaTable.class,
+                       IPBanTable.class,
+                       SQLWebhook.class,
+                       SQLSilentBan.class);
+    }
+
     public boolean init() {
         db = new SQLDatabase(plugin);
-        db.registerTables(List.of(BanTable.class, MetaTable.class, IPBanTable.class, SQLWebhook.class));
+        db.registerTables(getDatabaseClasses());
         return db.createAllTables();
     }
 

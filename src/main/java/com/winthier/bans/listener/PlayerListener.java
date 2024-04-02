@@ -6,6 +6,7 @@ import com.winthier.bans.BansPlugin;
 import com.winthier.bans.sql.BanTable;
 import com.winthier.bans.sql.IPBanTable;
 import com.winthier.bans.sql.MetaTable;
+import com.winthier.bans.sql.SQLSilentBan;
 import com.winthier.bans.util.Msg;
 import com.winthier.chat.event.ChatPlayerTalkEvent;
 import java.util.ArrayList;
@@ -16,7 +17,6 @@ import java.util.UUID;
 import java.util.WeakHashMap;
 import java.util.concurrent.Semaphore;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -27,6 +27,8 @@ import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.scheduler.BukkitRunnable;
+import static net.kyori.adventure.text.Component.text;
+import static net.kyori.adventure.text.format.NamedTextColor.*;
 
 public final class PlayerListener implements Listener {
     public final BansPlugin plugin;
@@ -169,16 +171,19 @@ public final class PlayerListener implements Listener {
             ie.printStackTrace();
             return;
         }
-        List<BanTable> bans = new ArrayList<>();
-        List<IPBanTable> ipbans = new ArrayList<>();
-        String ip = event.getAddress().getHostAddress();
+        final List<BanTable> bans = new ArrayList<>();
+        final List<IPBanTable> ipbans = new ArrayList<>();
+        final List<SQLSilentBan> silentBans = new ArrayList<>();
+        final String ip = event.getAddress().getHostAddress();
+        final UUID uuid = event.getUniqueId();
         plugin.database.getDb().scheduleAsyncTask(() -> {
                 List<BanTable> list = plugin.database.getDb()
                     .find(BanTable.class)
-                    .eq("player", event.getUniqueId())
+                    .eq("player", uuid)
                     .findList();
                 bans.addAll(list);
                 ipbans.addAll(plugin.database.getDb().find(IPBanTable.class).eq("ip", ip).findList());
+                silentBans.addAll(plugin.database.getDb().find(SQLSilentBan.class).eq("uuid", uuid).findList());
                 sem.release();
             });
         try {
@@ -224,9 +229,12 @@ public final class PlayerListener implements Listener {
         }
         if (!ipbans.isEmpty()) {
             IPBanTable ipban = ipbans.get(0);
-            Component message = Component.text("You have been banned by " + ipban.getAdminName()).color(NamedTextColor.RED)
-                .append(Component.text("\nReason: " + ipban.getReason()).color(NamedTextColor.RED));
+            Component message = Component.text("You have been banned by " + ipban.getAdminName()).color(RED)
+                .append(Component.text("\nReason: " + ipban.getReason()).color(RED));
             event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_BANNED, message);
+        }
+        if (!silentBans.isEmpty()) {
+            event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_BANNED, text("Access Denied :)", RED));
         }
     }
 
@@ -294,8 +302,8 @@ public final class PlayerListener implements Listener {
             String ip = player.getAddress().getAddress().getHostAddress();
             if (ip == null) continue;
             if (ip.equals(ipban.getIp())) {
-                Component message = Component.text("You have been banned by " + ipban.getAdminName()).color(NamedTextColor.RED)
-                    .append(Component.text("\nReason: " + ipban.getReason()).color(NamedTextColor.RED));
+                Component message = Component.text("You have been banned by " + ipban.getAdminName()).color(RED)
+                    .append(Component.text("\nReason: " + ipban.getReason()).color(RED));
                 player.kick(message);
             }
         }
