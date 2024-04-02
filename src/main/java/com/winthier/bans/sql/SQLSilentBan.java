@@ -12,6 +12,6 @@ import lombok.Data;
 @Name("silent_bans")
 public final class SQLSilentBan implements SQLRow {
     @Id private Integer id;
-    private UUID uuid;
+    @Unique private UUID uuid;
     private Date created;
 }
