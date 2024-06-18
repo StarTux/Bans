@@ -66,7 +66,7 @@ public final class PlayerListener implements Listener {
             // Issue immediate actions
             switch (ban.getType()) {
             case BAN: case KICK:
-                player.kick(Msg.getBanComponent(plugin, ban, List.of()));
+                player.kick(Msg.getBanComponent(ban, List.of()));
                 break;
             case WARNING:
                 // Update the ban type since the warning has been delivered.
@@ -75,16 +75,16 @@ public final class PlayerListener implements Listener {
                     table.lift();
                     plugin.database.storeBan(table);
                 }
-                player.sendMessage(Msg.getBanComponent(plugin, ban, List.of()));
+                player.sendMessage(Msg.getBanComponent(ban, List.of()));
                 break;
             case JAIL:
                 // Notify player, send to jail.
                 player.teleport(plugin.getJailLocation());
-                player.sendMessage(Msg.getBanComponent(plugin, ban, List.of()));
+                player.sendMessage(Msg.getBanComponent(ban, List.of()));
                 break;
             case MUTE:
                 // Notify player
-                player.sendMessage(Msg.getBanComponent(plugin, ban, List.of()));
+                player.sendMessage(Msg.getBanComponent(ban, List.of()));
                 break;
             case UNJAIL: case UNMUTE:
                 player.sendMessage(text("You have been " + ban.getType().getPassive() + " by " + ban.getAdminName(), RED));
@@ -210,7 +210,7 @@ public final class PlayerListener implements Listener {
                         ie.printStackTrace();
                         return;
                     }
-                    event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_BANNED, Msg.getBanComponent(plugin, ban, comments));
+                    event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_BANNED, Msg.getBanComponent(ban, comments));
                     return;
                 }
                 break;
@@ -219,7 +219,7 @@ public final class PlayerListener implements Listener {
                     updatePlayerBansLater(event.getUniqueId());
                 } else {
                     liftBanLater(ban);
-                    event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_OTHER, Msg.getBanComponent(plugin, ban, List.of()));
+                    event.disallow(AsyncPlayerPreLoginEvent.Result.KICK_OTHER, Msg.getBanComponent(ban, List.of()));
                     return;
                 }
                 break;
@@ -265,7 +265,7 @@ public final class PlayerListener implements Listener {
                 updatePlayerBans(player);
             } else {
                 event.setCancelled(true);
-                player.sendMessage(Msg.getBanComponent(plugin, mute, List.of()));
+                player.sendMessage(Msg.getBanComponent(mute, List.of()));
                 return;
             }
         }
@@ -274,7 +274,7 @@ public final class PlayerListener implements Listener {
                 updatePlayerBans(player);
             } else {
                 event.setCancelled(true);
-                player.sendMessage(Msg.getBanComponent(plugin, jail, List.of()));
+                player.sendMessage(Msg.getBanComponent(jail, List.of()));
                 return;
             }
         }
@@ -292,7 +292,7 @@ public final class PlayerListener implements Listener {
                 updatePlayerBans(player);
             } else {
                 event.setCancelled(true);
-                player.sendMessage(Msg.getBanComponent(plugin, jail, List.of()));
+                player.sendMessage(Msg.getBanComponent(jail, List.of()));
             }
         }
     }

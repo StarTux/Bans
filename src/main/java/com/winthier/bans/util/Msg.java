@@ -91,11 +91,13 @@ public final class Msg {
         }
     }
 
-    public static Component getBanComponent(BansPlugin plugin, Ban ban, List<MetaTable> comments) {
+    public static Component getBanComponent(Ban ban, List<MetaTable> comments) {
         final List<Component> result = new ArrayList<>();
-        result.add(textOfChildren(text("You have been " + ban.getType().getPassive() + " by "),
-                                  text(ban.getAdminName(), null, ITALIC),
-                                  text("."))
+        result.add(newline());
+        result.add(textOfChildren(text("You have been "),
+                                  text(ban.getType().getPassive(), DARK_RED),
+                                  text(" by "),
+                                  text(ban.getAdminName(), null, ITALIC))
                    .color(RED));
         if (ban.getExpiry() != 0L) {
             final long now = System.currentTimeMillis();
@@ -112,14 +114,13 @@ public final class Msg {
         }
         if (ban.getReason() != null) {
             result.add(newline());
-            result.add(textOfChildren(text("Reason: "),
-                                      text(ban.getReason(), null, ITALIC))
-                       .color(RED));
+            result.add(textOfChildren(text("Reason: ", RED),
+                                      text(ban.getReason(), DARK_RED, ITALIC)));
         }
         if (ban.getType() == BanType.BAN) {
             result.add(newline());
-            result.add(textOfChildren(text("Appeal at "),
-                                      text("cavetale.com/ban-appeal", null, UNDERLINED))
+            result.add(textOfChildren(text("Appeal at ", RED),
+                                      text("cavetale.com/ban-appeal", DARK_RED, UNDERLINED))
                        .hoverEvent(showText(text("cavetale.com/ban-appeal", RED, UNDERLINED)))
                        .clickEvent(openUrl("https://cavetale.com/ban-appeal")));
         }
@@ -132,7 +133,7 @@ public final class Msg {
         return join(noSeparators(), result);
     }
 
-    public static Component getBanComponent(BansPlugin plugin, BanTable ban, List<MetaTable> comments) {
-        return getBanComponent(plugin, new Ban(ban), comments);
+    public static Component getBanComponent(BanTable ban, List<MetaTable> comments) {
+        return getBanComponent(new Ban(ban), comments);
     }
 }
