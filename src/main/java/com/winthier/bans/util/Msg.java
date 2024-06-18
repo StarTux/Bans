@@ -104,10 +104,11 @@ public final class Msg {
             final long expiry = ban.getExpiry();
             final Timespan timespan = Timespan.difference(now, expiry);
             if (now < expiry) {
+                result.add(newline());
                 result.add(textOfChildren(text("Expiry: "),
                                           text(formatDate(expiry), null, ITALIC),
                                           text(" ("),
-                                          text(timespan.toNiceString(), null, ITALIC),
+                                          text(timespan.toNiceString(), DARK_RED, ITALIC),
                                           text(" left)"))
                            .color(RED));
             }
