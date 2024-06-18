@@ -6,8 +6,8 @@ import com.winthier.bans.BanType;
 import com.winthier.bans.BansPlugin;
 import com.winthier.bans.sql.BanTable;
 import com.winthier.bans.sql.IPBanTable;
-import com.winthier.bans.sql.MetaTable.MetaType;
 import com.winthier.bans.sql.MetaTable;
+import com.winthier.bans.sql.MetaTable.MetaType;
 import com.winthier.bans.util.Json;
 import com.winthier.bans.util.Msg;
 import com.winthier.bans.util.Timespan;
@@ -17,6 +17,7 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.EnumMap;
 import java.util.HashMap;
@@ -25,17 +26,22 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.event.ClickEvent;
-import net.kyori.adventure.text.event.HoverEvent;
-import net.kyori.adventure.text.format.NamedTextColor;
-import org.bukkit.ChatColor;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
-import org.bukkit.command.CommandException;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.command.TabExecutor;
 import org.bukkit.entity.Player;
+import static net.kyori.adventure.text.Component.empty;
+import static net.kyori.adventure.text.Component.join;
+import static net.kyori.adventure.text.Component.space;
+import static net.kyori.adventure.text.Component.text;
+import static net.kyori.adventure.text.Component.textOfChildren;
+import static net.kyori.adventure.text.JoinConfiguration.noSeparators;
+import static net.kyori.adventure.text.event.ClickEvent.suggestCommand;
+import static net.kyori.adventure.text.event.HoverEvent.showText;
+import static net.kyori.adventure.text.format.NamedTextColor.*;
+import static net.kyori.adventure.text.format.TextDecoration.*;
 
 public final class Commands implements TabExecutor {
     public final BansPlugin plugin;
@@ -72,16 +78,16 @@ public final class Commands implements TabExecutor {
             return (boolean) method.invoke(this, sender, args);
         } catch (IllegalAccessException iae) {
             iae.printStackTrace();
-            sender.sendMessage("" + ChatColor.RED + "An internal error occured. Please report this incident.");
+            sender.sendMessage(text("An internal error occured. Please report this incident", RED));
         } catch (IllegalArgumentException iae) {
             iae.printStackTrace();
-            sender.sendMessage("" + ChatColor.RED + "An internal error occured. Please report this incident.");
+            sender.sendMessage(text("An internal error occured. Please report this incident", RED));
         } catch (InvocationTargetException ite) {
-            if (ite.getCause() instanceof CommandException) {
-                sender.sendMessage("" + ChatColor.RED + ite.getCause().getMessage());
+            if (ite.getCause() instanceof BansException bansException) {
+                sender.sendMessage(bansException.getComponent());
             } else {
                 ite.printStackTrace();
-                sender.sendMessage("" + ChatColor.RED + "An internal error occured. Please report this incident.");
+                sender.sendMessage(text("An internal error occured. Please report this incident", RED));
             }
         }
         return true;
@@ -100,13 +106,13 @@ public final class Commands implements TabExecutor {
         case JAIL:
             for (BanTable record : playerBans) {
                 if (ban.getType().isActive() && ban.getType() == record.getType()) {
-                    throw new CommandException(Msg.format("Player %s is already %s.", ban.getPlayerName(), ban.getType().getPassive()));
+                    throw new BansException("Player " + ban.getPlayerName() + " is already " + ban.getType().getPassive());
                 }
             }
             break;
         case KICK:
             if (!plugin.isOnline(ban.getPlayer())) {
-                throw new CommandException("Player " + ban.getPlayerName() + " is not online.");
+                throw new BansException("Player " + ban.getPlayerName() + " is not online.");
             }
             break;
         default:
@@ -144,11 +150,11 @@ public final class Commands implements TabExecutor {
             found = record;
         }
         if (failed) {
-            throw new CommandException(Msg.format("%s could not be %s: Not your %s.",
-                                                  getPlayerName(player), newType.getPassive(),
-                                                  type.getNiceName().toLowerCase()));
+            throw new BansException(getPlayerName(player) + " could not be " + newType.getPassive() + ": Not your " + type.getNiceName().toLowerCase());
         }
-        if (found == null) throw new CommandException(Msg.format("%s is not %s.", getPlayerName(player), type.getPassive()));
+        if (found == null) {
+            throw new BansException(getPlayerName(player) + " is not " + type.getPassive());
+        }
         // Set the admin to whoever lifted the ban for the announcement.
         Ban ban = new Ban(found.getId(), found.getType(), PlayerCache.forUuid(found.getPlayer()),
                           (sender instanceof OfflinePlayer
@@ -172,50 +178,58 @@ public final class Commands implements TabExecutor {
     public boolean issuePerm(BanType type, CommandSender sender, String[] args) {
         if (args.length < 1) return false;
         // Build args
-        String playerName = args[0];
-        String reason = Msg.buildMessage(args, 1);
+        final String playerName = args[0];
+        final String reason = String.join(" ", Arrays.copyOfRange(args, 1, args.length));
         // Find players
-        UUID player = PlayerCache.uuidForName(playerName);
-        if (player == null) throw new CommandException("Unknown player: " + playerName);
-        UUID admin = getSenderUuid(sender);
+        final UUID player = PlayerCache.uuidForName(playerName);
+        if (player == null) {
+            throw new BansException("Unknown player: " + playerName);
+        }
+        final UUID admin = getSenderUuid(sender);
         // Build ban
-        BanTable ban = new BanTable(type, player, admin, reason, new Date(), null);
+        final BanTable ban = new BanTable(type, player, admin, reason, new Date(), null);
         storeBan(sender, ban);
-        Msg.send(sender, "&ePlayer %s %s.", playerName, type.getPassive());
+        sender.sendMessage(text("Player " + playerName + " " + type.getPassive(), YELLOW));
         return true;
     }
 
     public boolean issueTemp(BanType type, CommandSender sender, String[] args) {
         if (args.length < 2) return false;
         // Build args
-        String playerName = args[0];
-        String timeArg = args[1];
-        String reason = Msg.buildMessage(args, 2);
+        final String playerName = args[0];
+        final String timeArg = args[1];
+        final String reason = String.join(" ", Arrays.copyOfRange(args, 2, args.length));
         // Parse expiry
-        Timespan timespan = Timespan.parseTimespan(timeArg);
-        if (timespan == null) throw new CommandException("Bad time format: " + timeArg);
+        final Timespan timespan = Timespan.parseTimespan(timeArg);
+        if (timespan == null) {
+            throw new BansException("Bad time format: " + timeArg);
+        }
         // Find players
-        UUID player = PlayerCache.uuidForName(playerName);
-        if (player == null) throw new CommandException("Unknown player: " + playerName);
-        UUID admin = getSenderUuid(sender);
+        final UUID player = PlayerCache.uuidForName(playerName);
+        if (player == null) {
+            throw new BansException("Unknown player: " + playerName);
+        }
+        final UUID admin = getSenderUuid(sender);
         // Build ban
-        Date now = new Date();
-        BanTable ban = new BanTable(type, player, admin, reason, now, timespan.addTo(now));
+        final Date now = new Date();
+        final BanTable ban = new BanTable(type, player, admin, reason, now, timespan.addTo(now));
         storeBan(sender, ban);
-        Msg.send(sender, "&ePlayer %s %s for %s.", playerName, type.getPassive(), timespan.toNiceString());
+        sender.sendMessage("Player " + playerName + " " + type.getPassive() + " for " + timespan.toNiceString());
         return true;
     }
 
     public boolean liftBan(BanType type, CommandSender sender, String[] args) {
         if (args.length != 1) return false;
         // Build args
-        String playerName = args[0];
+        final String playerName = args[0];
         // Find player
-        UUID player = PlayerCache.uuidForName(playerName);
-        if (player == null) throw new CommandException("Unknown player: " + playerName);
+        final UUID player = PlayerCache.uuidForName(playerName);
+        if (player == null) {
+            throw new BansException("Unknown player: " + playerName);
+        }
         // Lift ban
         liftBan(sender, player, type);
-        Msg.send(sender, "&ePlayer %s %s.", playerName, type.lift().getPassive());
+        sender.sendMessage("Player " + playerName + " " + type.lift().getPassive());
         return true;
     }
 
@@ -275,193 +289,232 @@ public final class Commands implements TabExecutor {
         try {
             id = Integer.parseInt(idArg);
         } catch (NumberFormatException nfe) {
-            throw new CommandException("Invalid ban id: " + idArg);
+            throw new BansException("Invalid ban id: " + idArg);
         }
-        if (id < 0) throw new CommandException("Invalid ban id: " + idArg);
+        if (id < 0) {
+            throw new BansException("Invalid ban id: " + idArg);
+        }
         // Fetch ban
         BanTable ban = plugin.database.getBan(id);
-        if (ban != null && ban.getType() == BanType.NOTE && !sender.hasPermission("bans.note")) ban = null;
-        if (ban == null) throw new CommandException("Ban not found: " + id);
+        if (ban != null && ban.getType() == BanType.NOTE && !sender.hasPermission("bans.note")) {
+            ban = null;
+        }
+        if (ban == null) {
+            throw new BansException("Ban not found: " + id);
+        }
         Date now = new Date();
         plugin.database.updateBan(ban, now);
         // Send info
-        StringBuilder sb = new StringBuilder();
-        sb.append(Msg.format("&6[&eBan Info&6]"));
-        sb.append(Msg.format("\n &7Id: &c%04d", ban.getId()));
-        sb.append(Msg.format("\n &7Type: &c%s", ban.getType().getNiceName()));
-        sb.append(Msg.format("\n &7Player: &c%s", ban.getPlayerName()));
-        sb.append(Msg.format("\n &7Issued by: &c%s", ban.getAdminName()));
-        sb.append(Msg.format("\n &7Time: &c%s", Msg.formatDate(ban.getTime())));
+        sender.sendMessage(textOfChildren(text("[", GOLD), text("Ban Info", YELLOW), text("]", GOLD)));
+        sender.sendMessage(textOfChildren(text("Id: ", GRAY), text(ban.getId())));
+        sender.sendMessage(textOfChildren(text("Type: ", GRAY), text(ban.getType().getNiceName())));
+        sender.sendMessage(textOfChildren(text("Player: ", GRAY), text(ban.getPlayerName())));
+        sender.sendMessage(textOfChildren(text("Issued by: ", GRAY), text(ban.getAdminName())));
+        sender.sendMessage(textOfChildren(text("Time: ", GRAY), text(Msg.formatDate(ban.getTime()))));
         if (ban.getExpiry() != null) {
-            sb.append(Msg.format("\n &7Expiry: &c%s", Msg.formatDate(ban.getExpiry())));
+            sender.sendMessage(textOfChildren(text("Expiry: ", GRAY), text(Msg.formatDate(ban.getExpiry()))));
             Timespan duration = Timespan.difference(ban.getTime(), ban.getExpiry());
-            sb.append(Msg.format("\n &7Duration: &c%s", duration.toNiceString()));
+            sender.sendMessage(textOfChildren(text("Duration: ", GRAY), text(duration.toNiceString())));
             if (!ban.hasExpired()) {
                 Timespan timeLeft = Timespan.difference(now, ban.getExpiry());
-                sb.append(Msg.format("\n &7Time left: &c%s", timeLeft.toNiceString()));
+                sender.sendMessage(textOfChildren(text("Time left: ", GRAY), text(timeLeft.toNiceString())));
             }
         }
         if (ban.getReason() != null) {
-            sb.append(Msg.format("\n &7Reason: &c%s", ban.getReason()));
+            sender.sendMessage(textOfChildren(text("Reason: ", GRAY), text(ban.getReason())));
         }
-        sender.sendMessage(sb.toString());
         for (MetaTable meta : plugin.database.findMeta(ban)) {
-            sender.sendMessage(Msg.format("&e%s &8%s &f%s&7: %s",
-                                          meta.getType().name().toLowerCase(),
-                                          Msg.formatDate(meta.getTime()),
-                                          getSenderName(meta.getSender()),
-                                          meta.getContent()));
+            sender.sendMessage(textOfChildren(text(meta.getType().name().toLowerCase(), YELLOW),
+                                              text(" " + Msg.formatDate(meta.getTime()), DARK_GRAY),
+                                              text(getSenderName(meta.getSender()) + ": ", GRAY),
+                                              text(meta.getContent())));
         }
         return true;
     }
 
     public boolean editban(CommandSender sender, String[] args) {
         if (args.length < 2) return false;
-        String idArg = args[0];
-        String reason = Msg.buildMessage(args, 1);
+        final String idArg = args[0];
+        final String reason = String.join(" ", Arrays.copyOfRange(args, 1, args.length));
         // Parse args
         int id = -1;
         try {
             id = Integer.parseInt(idArg);
         } catch (NumberFormatException nfe) {
-            throw new CommandException("Invalid ban id: " + idArg);
+            throw new BansException("Invalid ban id: " + idArg);
         }
-        if (id < 0) throw new CommandException("Invalid ban id: " + idArg);
-        if (reason == null || reason.length() == 0) throw new CommandException("Ban reason required");
+        if (id < 0) {
+            throw new BansException("Invalid ban id: " + idArg);
+        }
+        if (reason == null || reason.length() == 0) {
+            throw new BansException("Ban reason required");
+        }
         // Fetch ban
         BanTable ban = plugin.database.getBan(id);
-        if (ban == null) throw new CommandException("Ban not found: " + id);
+        if (ban == null) {
+            throw new BansException("Ban not found: " + id);
+        }
         if (!ban.isOwnedBy(sender) && !sender.hasPermission("bans.override.edit")) {
-            throw new CommandException("You don't have permission to edit this ban");
+            throw new BansException("You don't have permission to edit this ban");
         }
         // Edit ban
         ban.setReason(reason);
         plugin.database.storeBan(ban);
-        MetaTable meta = new MetaTable(ban.getId(), MetaType.MODIFY, getSenderUuid(sender), new Date(), "Edit: " + reason);
+        final MetaTable meta = new MetaTable(ban.getId(), MetaType.MODIFY, getSenderUuid(sender), new Date(), "Edit: " + reason);
         plugin.database.storeMeta(meta);
         // Finish
-        Msg.send(sender, "&eBan reason updated");
+        sender.sendMessage(text("Ban reason updated", YELLOW));
         return true;
     }
 
     public boolean commentban(CommandSender sender, String[] args) {
         if (args.length < 2) return false;
-        String idArg = args[0];
-        String comment = Msg.buildMessage(args, 1);
+        final String idArg = args[0];
+        final String comment = String.join(" ", Arrays.copyOfRange(args, 1, args.length));
         // Parse args
         int id = -1;
         try {
             id = Integer.parseInt(idArg);
         } catch (NumberFormatException nfe) {
-            throw new CommandException("Invalid ban id: " + idArg);
+            throw new BansException("Invalid ban id: " + idArg);
         }
-        if (id < 0) throw new CommandException("Invalid ban id: " + idArg);
-        if (comment == null || comment.length() == 0) throw new CommandException("Comment required");
+        if (id < 0) {
+            throw new BansException("Invalid ban id: " + idArg);
+        }
+        if (comment == null || comment.length() == 0) {
+            throw new BansException("Comment required");
+        }
         // Fetch ban
-        BanTable ban = plugin.database.getBan(id);
-        if (ban == null) throw new CommandException("Ban not found: " + id);
+        final BanTable ban = plugin.database.getBan(id);
+        if (ban == null) {
+            throw new BansException("Ban not found: " + id);
+        }
         if (!ban.isOwnedBy(sender) && !sender.hasPermission("bans.override.comment")) {
-            throw new CommandException("You don't have permission comment on this ban");
+            throw new BansException("You don't have permission comment on this ban");
         }
         // Edit ban
-        MetaTable meta = new MetaTable(ban.getId(), MetaType.COMMENT, getSenderUuid(sender), new Date(), comment);
+        final MetaTable meta = new MetaTable(ban.getId(), MetaType.COMMENT, getSenderUuid(sender), new Date(), comment);
         plugin.database.storeMeta(meta);
         // Finish
         plugin.broadcast(meta);
-        Msg.send(sender, "&eComment stored");
+        sender.sendMessage(text("Comment stored", YELLOW));
         return true;
     }
 
     public boolean deleteban(CommandSender sender, String[] args) {
         if (args.length != 1) return false;
-        String idArg = args[0];
+        final String idArg = args[0];
         // Parse args
         int id = -1;
         try {
             id = Integer.parseInt(idArg);
         } catch (NumberFormatException nfe) {
-            throw new CommandException("Invalid ban id: " + idArg);
+            throw new BansException("Invalid ban id: " + idArg);
         }
-        if (id < 0) throw new CommandException("Invalid ban id: " + idArg);
+        if (id < 0) {
+            throw new BansException("Invalid ban id: " + idArg);
+        }
         // Fetch ban
-        BanTable ban = plugin.database.getBan(id);
-        if (ban == null) throw new CommandException("Ban not found: " + id);
+        final BanTable ban = plugin.database.getBan(id);
+        if (ban == null) {
+            throw new BansException("Ban not found: " + id);
+        }
         if (!ban.isOwnedBy(sender) && !sender.hasPermission("bans.override.delete")) {
-            throw new CommandException("You don't have permission to delete this ban");
+            throw new BansException("You don't have permission to delete this ban");
         }
         // Delete ban
         plugin.database.deleteBan(ban);
         // Finish
-        Msg.send(sender, "&eBan deleted");
+        sender.sendMessage(text("Ban deleted", YELLOW));
         return true;
     }
 
     public boolean mybans(CommandSender sender, String[] args) {
         if (args.length != 0) return false;
-        if (!(sender instanceof OfflinePlayer)) throw new CommandException("Player expected");
-        UUID player = ((OfflinePlayer) sender).getUniqueId();
-        List<BanTable> playerBans = plugin.database.getPlayerBans(player);
+        if (!(sender instanceof OfflinePlayer)) {
+            throw new BansException("Player expected");
+        }
+        final UUID player = ((OfflinePlayer) sender).getUniqueId();
+        final List<BanTable> playerBans = plugin.database.getPlayerBans(player);
         // Check validity
         if (player == null || playerBans.isEmpty()) {
-            Msg.send(sender, "&3No bans on your record.");
+            sender.sendMessage(text("No bans on your record", DARK_AQUA));
             return true;
         }
-        StringBuilder sb = new StringBuilder();
-        sb.append(Msg.format("&3Your ban record:"));
+        sender.sendMessage(text("Your ban record:", DARK_AQUA));
         for (BanTable ban : playerBans) {
             if (ban.getType() == BanType.NOTE) continue;
-            sb.append(Msg.format("\n&b &o%s&3 -&b %s by &o%s&b.", Msg.formatDate(ban.getTime()), ban.getType().unlift().getPassive(), ban.getAdminName()));
+            sender.sendMessage(textOfChildren(text(Msg.formatDate(ban.getTime()), AQUA, ITALIC),
+                                              text(" - ", DARK_AQUA),
+                                              text(ban.getType().unlift().getPassive(), AQUA),
+                                              text(" by ", DARK_AQUA),
+                                              text(ban.getAdminName(), AQUA)));
             if (ban.getReason() != null) {
-                sb.append(Msg.format("\n &3Reason: &b&o%s", ban.getReason()));
+                sender.sendMessage(textOfChildren(text("  Reason: ", DARK_AQUA),
+                                                  text(ban.getReason(), AQUA, ITALIC)));
             }
         }
-        sender.sendMessage(sb.toString());
         return true;
     }
 
     public boolean baninfo(CommandSender sender, String[] args) {
         if (args.length != 1) return false;
-        String playerName = args[0];
-        UUID player = PlayerCache.uuidForName(playerName);
+        final String playerName = args[0];
+        final UUID player = PlayerCache.uuidForName(playerName);
         // Check validity
-        if (player == null) throw new CommandException("Player not found: " + playerName);
-        List<BanTable> playerBans = plugin.database.getPlayerBans(player);
-        if (playerBans.isEmpty()) throw new CommandException("No bans: " + playerName);
+        if (player == null) {
+            throw new BansException("Player not found: " + playerName);
+        }
+        final List<BanTable> playerBans = plugin.database.getPlayerBans(player);
+        if (playerBans.isEmpty()) {
+            throw new BansException("No bans: " + playerName);
+        }
         // Update
         plugin.database.updateBans(playerBans);
         // Build message
-        sender.sendMessage(Msg.format("&6[&eBan record of &6&o%s&6]", playerName));
+        sender.sendMessage(textOfChildren(text("[", GOLD),
+                                          text("Ban record of ", YELLOW),
+                                          text(playerName, YELLOW, ITALIC),
+                                          text("]", GOLD)));
         if (playerBans.isEmpty()) {
-            sender.sendMessage(Msg.format("&e No entries found"));
+            sender.sendMessage(text("No entries found", RED));
             return true;
         }
-        Map<BanType, Integer> count = new EnumMap<BanType, Integer>(BanType.class);
+        final Map<BanType, Integer> count = new EnumMap<BanType, Integer>(BanType.class);
         for (BanType type : BanType.values()) count.put(type, 0);
-        Collections.sort(playerBans, (o1, o2) -> o1.getTime().compareTo(o2.getTime()));
+        Collections.sort(playerBans, Comparator.comparing(BanTable::getTime));
         for (BanTable ban : playerBans) {
-            StringBuilder sb = new StringBuilder();
             if (ban.getType() == BanType.NOTE) {
                 if (!sender.hasPermission("bans.note")) continue;
             }
-            if (ban.getType().isActive()) {
-                sb.append(Msg.format("&4&l"));
-            } else {
-                sb.append(Msg.format("&c"));
+            final String cmd = "/showban " + ban.getId();
+            sender.sendMessage(textOfChildren((ban.getType().isActive()
+                                               ? text(ban.getType().getNiceName(), DARK_RED, BOLD)
+                                               : text(ban.getType().getNiceName(), RED)),
+                                              space(),
+                                              text("[", YELLOW),
+                                              text(String.format("%04d", ban.getId()), WHITE),
+                                              text("]", YELLOW),
+                                              space(),
+                                              text(Msg.formatDate(ban.getTime()), GRAY),
+                                              (ban.getExpiry() != null
+                                               ? textOfChildren(space(),
+                                                                text(Msg.formatDate(ban.getExpiry()), DARK_GRAY),
+                                                                space(),
+                                                                text("(", WHITE),
+                                                                text("" + Timespan.difference(ban.getTime(), ban.getExpiry()), GRAY),
+                                                                text(")", WHITE))
+                                               : empty()))
+                               .insertion(cmd)
+                               .hoverEvent(showText(text(cmd, GRAY)))
+                               .clickEvent(suggestCommand(cmd)));
+            if (ban.getReason() != null) {
+                sender.sendMessage(textOfChildren(text(ban.getAdminName() + ": ", GRAY),
+                                                  text(ban.getReason(), WHITE)));
             }
-            sb.append(Msg.format("%s &e[&f%04d&e] &7%s", ban.getType().getNiceName(), ban.getId(), Msg.formatDate(ban.getTime())));
-            if (ban.getExpiry() != null) {
-                sb.append(Msg.format(" &8%s &f(&7%s&f)", Msg.formatDate(ban.getExpiry()), Timespan.difference(ban.getTime(), ban.getExpiry())));
-            }
-            Component tooltip = Component.text("/showban " + ban.getId(), NamedTextColor.YELLOW);
-            sender.sendMessage(Component.text(sb.toString())
-                               .hoverEvent(HoverEvent.showText(tooltip))
-                               .clickEvent(ClickEvent.suggestCommand("/showban " + ban.getId())));
-            String reason = ban.getReason();
-            if (reason == null) reason = "N/A";
-            sender.sendMessage(Msg.format("&7&o%s&8:&f %s", ban.getAdminName(), reason));
             count.put(ban.getType(), count.get(ban.getType()) + 1);
         }
-        StringBuilder sb = new StringBuilder();
+        final List<Component> line = new ArrayList<>();
         // Statistics
         int bans = count.get(BanType.BAN) + count.get(BanType.UNBAN);
         int kicks = count.get(BanType.KICK);
@@ -469,16 +522,34 @@ public final class Commands implements TabExecutor {
         int warns = count.get(BanType.WARNING) + count.get(BanType.WARNED);
         int jails = count.get(BanType.JAIL) + count.get(BanType.UNJAIL);
         int notes = count.get(BanType.NOTE);
-        if (bans > 0) sb.append(Msg.format("&c Bans: %s", bans));
-        if (kicks > 0) sb.append(Msg.format("&c Kicks: %s", kicks));
-        if (mutes > 0) sb.append(Msg.format("&c Mutes: %s", mutes));
-        if (warns > 0) sb.append(Msg.format("&c Warnings: %s", warns));
-        if (jails > 0) sb.append(Msg.format("&c Jails: %s", jails));
-        if (notes > 0) sb.append(Msg.format("&c Notes: %s", notes));
-        if (count.get(BanType.BAN) > 0) sb.append(Msg.format("&4&l BANNED"));
-        if (count.get(BanType.MUTE) > 0) sb.append(Msg.format("&4&l MUTED"));
-        if (count.get(BanType.JAIL) > 0) sb.append(Msg.format("&4&l JAILED"));
-        sender.sendMessage(sb.toString());
+        if (bans > 0) {
+            line.add(text(" Bans: " + bans, RED));
+        }
+        if (kicks > 0) {
+            line.add(text(" Kicks: " + kicks, RED));
+        }
+        if (mutes > 0) {
+            line.add(text(" Mutes: " + mutes, RED));
+        }
+        if (warns > 0) {
+            line.add(text(" Warnings: " + warns, RED));
+        }
+        if (jails > 0) {
+            line.add(text(" Jails: " + jails, RED));
+        }
+        if (notes > 0) {
+            line.add(text(" Notes: " + notes, RED));
+        }
+        if (count.get(BanType.BAN) > 0) {
+            line.add(text(" BANNED", DARK_RED, BOLD));
+        }
+        if (count.get(BanType.MUTE) > 0) {
+            line.add(text(" MUTED", DARK_RED, BOLD));
+        }
+        if (count.get(BanType.JAIL) > 0) {
+            line.add(text(" JAILED", DARK_RED, BOLD));
+        }
+        sender.sendMessage(join(noSeparators(), line));
         return true;
     }
 
@@ -490,13 +561,15 @@ public final class Commands implements TabExecutor {
             sender.sendMessage("Updated all bans. See console.");
             return true;
         } else if (args.length == 1 && "SetJail".equalsIgnoreCase(args[0])) {
-            if (!(sender instanceof Player)) throw new CommandException("Player expected");
+            if (!(sender instanceof Player)) {
+                throw new BansException("Player expected");
+            }
             plugin.setJailLocation(((Player) sender).getLocation());
-            Msg.send(sender, "&eJail location set");
+            sender.sendMessage(text("Jail location set", YELLOW));
             return true;
         } else if (args.length == 1 && "Reload".equalsIgnoreCase(args[0])) {
             plugin.reloadConfig();
-            Msg.send(sender, "&eConfiguration reloaded");
+            sender.sendMessage(text("Configuration reloaded", YELLOW));
             return true;
         }
         switch (args[0]) {
@@ -559,24 +632,33 @@ public final class Commands implements TabExecutor {
         return true;
     }
 
-    void banlistCallback(CommandSender sender, List<BanTable> list, int page) {
+    private void banlistCallback(CommandSender sender, List<BanTable> list, int page) {
         if (list.isEmpty()) {
-            sender.sendMessage(ChatColor.RED + "Page " + page + " is empty!");
+            sender.sendMessage(text("Page " + page + " is empty!", RED));
             return;
         }
-        sender.sendMessage(ChatColor.YELLOW + "Bans list (page " + page + ")");
+        sender.sendMessage(text("Bans list (page " + page + ")", YELLOW));
         for (BanTable ban : list) {
             if (ban.getType() == BanType.NOTE) {
                 if (!sender.hasPermission("bans.note")) continue;
             }
-            String banColor = Msg.format(ban.getType().isActive() ? "&4&l" : "&c");
-            sender.sendMessage(Component.text(Msg.format("&e[&f%04d&e] %s%s&7 %s&r %s&8/&e%s&7 %s",
-                                                         ban.getId(), banColor, ban.getType().getNiceName(),
-                                                         Msg.formatDateShort(ban.getTime()),
-                                                         ban.getPlayerName(), ban.getAdminName(), ban.getReason()))
-                               .hoverEvent(HoverEvent.showText(Component.text("/showban " + ban.getId(),
-                                                                              NamedTextColor.YELLOW)))
-                               .clickEvent(ClickEvent.suggestCommand("/showban " + ban.getId())));
+            sender.sendMessage(textOfChildren(text("[", YELLOW),
+                                              text(String.format("%04d", ban.getId()), WHITE),
+                                              text("]", YELLOW),
+                                              space(),
+                                              (ban.getType().isActive()
+                                               ? text(ban.getType().getNiceName(), DARK_RED, BOLD)
+                                               : text(ban.getType().getNiceName(), RED)),
+                                              space(),
+                                              text(Msg.formatDateShort(ban.getTime()), GRAY),
+                                              space(),
+                                              text(ban.getPlayerName(), WHITE),
+                                              text("/", DARK_GRAY),
+                                              text(ban.getAdminName(), YELLOW),
+                                              space(),
+                                              text(ban.getReason(), GRAY))
+                               .hoverEvent(showText(text("/showban " + ban.getId(), GRAY)))
+                               .clickEvent(suggestCommand("/showban " + ban.getId())));
         }
     }
 
@@ -621,16 +703,16 @@ public final class Commands implements TabExecutor {
             if (args.length != 2) return false;
             String ip = parseIP(args[1]);
             if (ip == null) {
-                sender.sendMessage(ChatColor.RED + "Invalid IP: " + args[1]);
+                sender.sendMessage(text("Invalid IP: " + args[1], RED));
                 return true;
             }
             plugin.database.getDb().find(IPBanTable.class)
                 .eq("ip", ip)
                 .deleteAsync(count -> {
                         if (count == 0) {
-                            sender.sendMessage(Component.text("IP ban not found: " + ip).color(NamedTextColor.RED));
+                            sender.sendMessage(text("IP ban not found: " + ip, RED));
                         } else {
-                            sender.sendMessage(Component.text(count + " IP ban(s) lifted: " + ip).color(NamedTextColor.YELLOW));
+                            sender.sendMessage(text(count + " IP ban(s) lifted: " + ip, YELLOW));
                         }
                     });
             return true;
@@ -658,14 +740,14 @@ public final class Commands implements TabExecutor {
                 .orderByDescending("time")
                 .findListAsync(list -> {
                         if (list.isEmpty()) {
-                            sender.sendMessage(ChatColor.RED + "Page is empty!");
+                            sender.sendMessage(text("Page is empty!", RED));
                             return;
                         }
                         for (IPBanTable row : list) {
-                            Component component = Component.text("- " + row.getIp()).color(NamedTextColor.YELLOW).insertion(row.getIp())
-                                .append(Component.text(" " + row.getAdminName()).color(NamedTextColor.BLUE))
-                                .append(Component.text(" " + row.getReason()).color(NamedTextColor.WHITE));
-                            sender.sendMessage(component);
+                            sender.sendMessage(textOfChildren(text("- " + row.getIp(), YELLOW),
+                                                              text(" " + row.getAdminName(), BLUE),
+                                                              text(" " + row.getReason(), WHITE))
+                                               .insertion(row.getIp()));
                         }
                     });
             return true;
@@ -673,7 +755,7 @@ public final class Commands implements TabExecutor {
         default: {
             String ip = parseIP(args[0]);
             if (ip == null) {
-                sender.sendMessage(ChatColor.RED + "Invalid IP: " + args[0]);
+                sender.sendMessage(text("Invalid IP: " + args[0], RED));
                 return true;
             }
             String reason = String.join(" ", Arrays.copyOfRange(args, 1, args.length));
@@ -682,9 +764,9 @@ public final class Commands implements TabExecutor {
                 plugin.database.getDb().insert(row);
             } catch (Exception e) {
                 e.printStackTrace();
-                sender.sendMessage(ChatColor.RED + "IP already banned: " + ip + " (or error, see console)");
+                sender.sendMessage(text("IP already banned: " + ip + " (or error, see console)", RED));
             }
-            sender.sendMessage(ChatColor.YELLOW + "IP banned: " + ip);
+            sender.sendMessage(text("IP banned: " + ip, YELLOW));
             plugin.broadcast(row);
             return true;
         }

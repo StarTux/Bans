@@ -87,7 +87,7 @@ public final class PlayerListener implements Listener {
                 player.sendMessage(Msg.getBanComponent(plugin, ban, List.of()));
                 break;
             case UNJAIL: case UNMUTE:
-                Msg.send(player, "&cYou have been %s by &o%s&c.", ban.getType().getPassive(), ban.getAdminName());
+                player.sendMessage(text("You have been " + ban.getType().getPassive() + " by " + ban.getAdminName(), RED));
                 break;
             default:
                 break;

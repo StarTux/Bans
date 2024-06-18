@@ -3,7 +3,6 @@ package com.winthier.bans.sql;
 import com.winthier.bans.Ban;
 import com.winthier.bans.BanType;
 import com.winthier.bans.BansPlugin;
-import com.winthier.bans.util.Msg;
 import com.winthier.sql.SQLDatabase;
 import com.winthier.sql.SQLRow;
 import java.util.ArrayList;
@@ -60,7 +59,7 @@ public final class Database {
     public void updateBan(BanTable ban, Date now) {
         if (!ban.expires()) return;
         if (now.compareTo(ban.getExpiry()) >= 0) {
-            plugin.getLogger().info(Msg.format("%s [%04d] on %s has expired.", ban.getType().getNiceName(), ban.getId(), ban.getPlayerName()));
+            plugin.getLogger().info(ban.getType().getNiceName() + " [" + ban.getId() + "] on " + ban.getPlayerName() + " has expired");
             ban.setType(ban.getType().lift());
             db.save(ban);
         }

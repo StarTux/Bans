@@ -6,31 +6,25 @@ import com.winthier.bans.BansPlugin;
 import com.winthier.bans.sql.BanTable;
 import com.winthier.bans.sql.MetaTable;
 import java.text.DateFormatSymbols;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.TextComponent;
-import net.kyori.adventure.text.event.ClickEvent;
-import net.kyori.adventure.text.event.HoverEvent;
-import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.format.TextDecoration;
-import org.bukkit.ChatColor;
-import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import static net.kyori.adventure.text.Component.empty;
+import static net.kyori.adventure.text.Component.join;
+import static net.kyori.adventure.text.Component.newline;
+import static net.kyori.adventure.text.Component.text;
+import static net.kyori.adventure.text.Component.textOfChildren;
+import static net.kyori.adventure.text.JoinConfiguration.noSeparators;
+import static net.kyori.adventure.text.event.ClickEvent.openUrl;
+import static net.kyori.adventure.text.event.HoverEvent.showText;
+import static net.kyori.adventure.text.format.NamedTextColor.*;
+import static net.kyori.adventure.text.format.TextDecoration.*;
 
 public final class Msg {
     private Msg() { }
-
-    public static String format(String msg, Object... args) {
-        msg = ChatColor.translateAlternateColorCodes('&', msg);
-        if (args.length > 0) msg = String.format(msg, args);
-        return msg;
-    }
-
-    public static void send(CommandSender sender, String msg, Object... args) {
-        sender.sendMessage(format(msg, args));
-    }
 
     public static String formatDate(long time) {
         return formatDate(new Date(time));
@@ -54,38 +48,40 @@ public final class Msg {
     }
 
     /**
-     * Build a message from an array starting with an index.  This
-     * is used for turning command line arguments into a ban
-     * reason.
-     */
-    public static String buildMessage(String[] args, int beginIndex) {
-        if (beginIndex >= args.length) return null;
-        StringBuilder sb = new StringBuilder(args[beginIndex]);
-        for (int i = beginIndex + 1; i < args.length; ++i) {
-            sb.append(" ");
-            sb.append(args[i]);
-        }
-        return sb.toString();
-    }
-
-    /**
      * Announce a recent ban to everyone who has permission.
      */
     public static void announce(BansPlugin plugin, Ban ban) {
         if (ban.getType() == BanType.NOTE) return;
-        String msg;
+        final Component msg;
         if (ban.getType().isLifted()) {
-            msg = format("&e&o%s&e was %s by &o%s&e.",
-                         ban.getPlayer().getName(), ban.getType().getPassive(), ban.getAdminName());
+            msg = textOfChildren(text(ban.getPlayer().getName(), YELLOW, ITALIC),
+                                 text(" was ", GRAY),
+                                 text(ban.getType().getPassive(), YELLOW),
+                                 text(" by ", GRAY),
+                                 text(ban.getAdminName(), YELLOW, ITALIC));
         } else if (ban.getExpiry() == 0L) {
-            msg = format("&e&o%s&e was %s by &o%s&e.",
-                         ban.getPlayer().getName(), ban.getType().getPassive(), ban.getAdminName());
-            if (ban.getReason() != null) msg += Msg.format(" Reason: &o%s", ban.getReason());
+            msg = textOfChildren(text(ban.getPlayer().getName(), YELLOW, ITALIC),
+                                 text(" was ", GRAY),
+                                 text(ban.getType().getPassive(), YELLOW),
+                                 text(" by ", GRAY),
+                                 text(ban.getAdminName(), YELLOW, ITALIC),
+                                 (ban.getReason() != null
+                                  ? textOfChildren(text(" Reason: ", YELLOW),
+                                                   text(ban.getReason(), YELLOW, ITALIC))
+                                  : empty()));
         } else {
-            Timespan timespan = Timespan.difference(ban.getTime(), ban.getExpiry());
-            msg = format("&e&o%s&e was %s for &o%s&e by &o%s&e.",
-                         ban.getPlayer().getName(), ban.getType().getPassive(), timespan.toNiceString(), ban.getAdminName());
-            if (ban.getReason() != null) msg += Msg.format(" Reason: &o%s", ban.getReason());
+            final Timespan timespan = Timespan.difference(ban.getTime(), ban.getExpiry());
+            msg = textOfChildren(text(ban.getPlayer().getName(), YELLOW, ITALIC),
+                                 text(" was ", GRAY),
+                                 text(ban.getType().getPassive(), YELLOW),
+                                 text(" for ", GRAY),
+                                 text(timespan.toNiceString(), YELLOW, ITALIC),
+                                 text(" by ", GRAY),
+                                 text(ban.getAdminName(), YELLOW, ITALIC),
+                                 (ban.getReason() != null
+                                  ? textOfChildren(text(" Reason: ", YELLOW),
+                                                   text(ban.getReason(), YELLOW, ITALIC))
+                                  : empty()));
         }
         plugin.getServer().getConsoleSender().sendMessage(msg);
         for (Player player : plugin.getServer().getOnlinePlayers()) {
@@ -96,40 +92,44 @@ public final class Msg {
     }
 
     public static Component getBanComponent(BansPlugin plugin, Ban ban, List<MetaTable> comments) {
-        TextComponent.Builder result = Component.text().color(NamedTextColor.RED)
-            .append(Component.text("You have been " + ban.getType().getPassive() + " by "))
-            .append(Component.text(ban.getAdminName(), null, TextDecoration.ITALIC))
-            .append(Component.text("."));
+        final List<Component> result = new ArrayList<>();
+        result.add(textOfChildren(text("You have been " + ban.getType().getPassive() + " by "),
+                                  text(ban.getAdminName(), null, ITALIC),
+                                  text("."))
+                   .color(RED));
         if (ban.getExpiry() != 0L) {
-            long now = System.currentTimeMillis();
-            long expiry = ban.getExpiry();
-            Timespan timespan = Timespan.difference(now, expiry);
+            final long now = System.currentTimeMillis();
+            final long expiry = ban.getExpiry();
+            final Timespan timespan = Timespan.difference(now, expiry);
             if (now < expiry) {
-                result.append(Component.text("Expiry: "))
-                    .append(Component.text(formatDate(expiry), null, TextDecoration.ITALIC))
-                    .append(Component.text(" ("))
-                    .append(Component.text(timespan.toNiceString(), null, TextDecoration.ITALIC))
-                    .append(Component.text(" left)"));
+                result.add(textOfChildren(text("Expiry: "),
+                                          text(formatDate(expiry), null, ITALIC),
+                                          text(" ("),
+                                          text(timespan.toNiceString(), null, ITALIC),
+                                          text(" left)"))
+                           .color(RED));
             }
         }
         if (ban.getReason() != null) {
-            result.append(Component.text("\nReason: "))
-                .append(Component.text(ban.getReason(), null, TextDecoration.ITALIC));
+            result.add(newline());
+            result.add(textOfChildren(text("Reason: "),
+                                      text(ban.getReason(), null, ITALIC))
+                       .color(RED));
         }
-        switch (ban.getType()) {
-        case BAN:
-            result.append(Component.text("\nAppeal at "))
-                .append(Component.text("cavetale.com/ban-appeal", null, TextDecoration.UNDERLINED)
-                        .hoverEvent(HoverEvent.showText(Component.text("cavetale.com/ban-appeal", NamedTextColor.RED, TextDecoration.UNDERLINED)))
-                        .clickEvent(ClickEvent.openUrl("https://cavetale.com/ban-appeal")));
-            break;
-        default: break;
+        if (ban.getType() == BanType.BAN) {
+            result.add(newline());
+            result.add(textOfChildren(text("Appeal at "),
+                                      text("cavetale.com/ban-appeal", null, UNDERLINED))
+                       .hoverEvent(showText(text("cavetale.com/ban-appeal", RED, UNDERLINED)))
+                       .clickEvent(openUrl("https://cavetale.com/ban-appeal")));
         }
         for (MetaTable meta : comments) {
-            result.append(Component.text("\nComment: "))
-                .append(Component.text(meta.getContent(), null, TextDecoration.ITALIC));
+            result.add(newline());
+            result.add(textOfChildren(text("Comment: "),
+                                      text(meta.getContent(), null, ITALIC))
+                       .color(RED));
         }
-        return result.build();
+        return join(noSeparators(), result);
     }
 
     public static Component getBanComponent(BansPlugin plugin, BanTable ban, List<MetaTable> comments) {
