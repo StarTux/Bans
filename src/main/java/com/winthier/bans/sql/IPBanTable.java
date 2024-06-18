@@ -2,27 +2,22 @@ package com.winthier.bans.sql;
 
 import com.cavetale.core.playercache.PlayerCache;
 import com.winthier.sql.SQLRow;
+import com.winthier.sql.SQLRow.Name;
 import java.util.Date;
 import java.util.UUID;
-import javax.persistence.Column;
-import javax.persistence.Id;
-import javax.persistence.Table;
 import lombok.Data;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
 
-@Data @Table(name = "ip_bans")
+@Data
+@Name("ip_bans")
 public final class IPBanTable implements SQLRow {
     @Id private Integer id;
-    @Column(nullable = false, length = 40, unique = true) // Enough for IPv6 in the future
-    private String ip;
-    @Column(nullable = true)
-    private UUID admin;
-    @Column(nullable = true, length = 255)
-    private String reason;
-    @Column(nullable = false)
-    private Date time;
+    @VarChar(40) @NotNull @Unique private String ip; // Enough for IPv6 in the future
+    @Nullable private UUID admin;
+    @VarChar(255) @Nullable private String reason;
+    @NotNull private Date time;
 
     public IPBanTable() { }
 

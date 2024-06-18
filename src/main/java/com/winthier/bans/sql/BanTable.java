@@ -3,29 +3,24 @@ package com.winthier.bans.sql;
 import com.cavetale.core.playercache.PlayerCache;
 import com.winthier.bans.BanType;
 import com.winthier.sql.SQLRow;
+import com.winthier.sql.SQLRow.Name;
 import java.util.Date;
 import java.util.UUID;
-import javax.persistence.Column;
-import javax.persistence.Id;
-import javax.persistence.Index;
-import javax.persistence.Table;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
 
-@Getter @Setter
-@Table(name = "bans",
-       indexes = @Index(columnList = "player"))
+@Data
+@Name("bans")
 public final class BanTable implements SQLRow {
     @Id private Integer id;
-    @Column(nullable = false) private UUID player;
-    @Column(nullable = true) private UUID admin;
-    @Column(nullable = true, length = 255) private String reason;
-    @Column(nullable = false) private Date time;
-    @Column(nullable = true) private Date expiry;
-    @Column(nullable = false, length = 7, name = "type") private String typeName;
+    @NotNull @Keyed private UUID player;
+    @Nullable private UUID admin;
+    @VarChar(255) @Nullable private String reason;
+    @NotNull private Date time;
+    @Nullable private Date expiry;
+    @NotNull @VarChar(7) @Name("type") private String typeName;
 
     public BanTable() { }
 

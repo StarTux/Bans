@@ -1,16 +1,12 @@
 package com.winthier.bans.sql;
 
 import com.winthier.sql.SQLRow;
-import javax.persistence.Column;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import com.winthier.sql.SQLRow.Name;
 import lombok.Data;
 
 @Data
-@Table(name = "webhook")
+@Name("webhook")
 public final class SQLWebhook implements SQLRow {
-    @Id
-    private Integer id;
-    @Column(nullable = true, length = 255)
-    private String url;
+    @Id private Integer id;
+    @VarChar(255) private String url;
 }

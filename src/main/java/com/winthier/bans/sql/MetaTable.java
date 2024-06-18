@@ -2,24 +2,21 @@ package com.winthier.bans.sql;
 
 import com.cavetale.core.playercache.PlayerCache;
 import com.winthier.sql.SQLRow;
+import com.winthier.sql.SQLRow.Name;
 import java.util.Date;
 import java.util.UUID;
-import javax.persistence.Column;
-import javax.persistence.Id;
-import javax.persistence.Index;
-import javax.persistence.Table;
-import lombok.Getter;
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
-import lombok.Setter;
 
-@Getter @Setter @Table(name = "meta", indexes = @Index(columnList = "ban_id"))
+@Data
+@Name("meta")
 public final class MetaTable implements SQLRow {
     @Id private Integer id;
-    @Column(nullable = false) private int banId;
-    @Column(nullable = false) private MetaType type;
-    @Column(nullable = true) private UUID sender; // null = plugin/console
-    @Column(nullable = false) private Date time;
-    @Column(nullable = true, length = 4096) private String content;
+    @NotNull @Keyed private int banId;
+    @NotNull private MetaType type;
+    @Nullable private UUID sender; // null = plugin/console
+    @NotNull private Date time;
+    @Text @Nullable private String content;
 
     @RequiredArgsConstructor
     public enum MetaType {
