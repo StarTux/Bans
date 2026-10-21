@@ -2,7 +2,7 @@ main: com.winthier.bans.BansPlugin
 name: Bans
 
 version: 0.1
-api-version: '26.1.2'
+api-version: '26.3'
 
 description: Ban management for Cavetale
 author: StarTux
