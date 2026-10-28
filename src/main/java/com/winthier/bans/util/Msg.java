@@ -115,21 +115,20 @@ public final class Msg {
         }
         if (ban.getReason() != null) {
             result.add(newline());
-            result.add(textOfChildren(text("Reason: ", RED),
-                                      text(ban.getReason(), DARK_RED, ITALIC)));
+            result.add(newline());
+            result.add(textOfChildren(text("Reason: ", RED), text(ban.getReason(), WHITE)));
+        }
+        for (MetaTable meta : comments) {
+            result.add(newline());
+            result.add(textOfChildren(text("Comment: ", RED), text(meta.getContent(), WHITE)));
         }
         if (ban.getType() == BanType.BAN) {
+            result.add(newline());
             result.add(newline());
             result.add(textOfChildren(text("Appeal at ", RED),
                                       text("cavetale.com/ban-appeal", DARK_RED, UNDERLINED))
                        .hoverEvent(showText(text("cavetale.com/ban-appeal", RED, UNDERLINED)))
                        .clickEvent(openUrl("https://cavetale.com/ban-appeal")));
-        }
-        for (MetaTable meta : comments) {
-            result.add(newline());
-            result.add(textOfChildren(text("Comment: "),
-                                      text(meta.getContent(), null, ITALIC))
-                       .color(RED));
         }
         return join(noSeparators(), result);
     }
