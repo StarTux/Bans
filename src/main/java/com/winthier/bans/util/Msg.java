@@ -125,10 +125,7 @@ public final class Msg {
         if (ban.getType() == BanType.BAN) {
             result.add(newline());
             result.add(newline());
-            result.add(textOfChildren(text("Appeal at ", RED),
-                                      text("cavetale.com/ban-appeal", DARK_RED, UNDERLINED))
-                       .hoverEvent(showText(text("cavetale.com/ban-appeal", RED, UNDERLINED)))
-                       .clickEvent(openUrl("https://cavetale.com/ban-appeal")));
+            result.add(textOfChildren(text("Appeal at ", RED), text("cavetale.com/ban-appeal", BLUE, UNDERLINED)));
         }
         return join(noSeparators(), result);
     }
