@@ -94,11 +94,14 @@ public final class Msg {
     public static Component getBanComponent(Ban ban, List<MetaTable> comments) {
         final List<Component> result = new ArrayList<>();
         result.add(newline());
-        result.add(textOfChildren(text("You have been "),
-                                  text(ban.getType().getPassive(), DARK_RED),
-                                  text(" by "),
-                                  text(ban.getAdminName(), null, ITALIC))
-                   .color(RED));
+        result.add(
+            textOfChildren(
+                text("You have been "),
+                text(ban.getType().getPassive(), RED, BOLD),
+                text(" by "),
+                text(ban.getAdminName(), null, ITALIC)
+            ).color(RED)
+        );
         if (ban.getExpiry() != 0L) {
             final long now = System.currentTimeMillis();
             final long expiry = ban.getExpiry();
